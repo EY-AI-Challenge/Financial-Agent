@@ -63,7 +63,7 @@ Submit you solution to your specific branch:
 ## 💡 Tips for Competitors
 
 - **Master the Market Data**: Dive deep into the stock and cryptocurrency data. Look for patterns, correlations, and anomalies that could inform **strategic investment decisions**.
-- **Develop a Clear Value Proposition**: Define exactly how your solution will add value—whether by **improving decision speed**, **reducing risk**, **identifying overlooked opportunities**, or **enhancing portfolio performance**.
+- **Develop a Clear Value Proposition**: Define exactly how your solution will add value - whether by **improving decision speed**, **reducing risk**, **identifying overlooked opportunities**, or **enhancing portfolio performance**.
 - **Think Like the Client**: Understand the day-to-day of **investment professionals**. What insights would improve their decisions? How can your solution seamlessly integrate into their workflow?
 - **Establish a Performance Framework**: Use metrics like **ROI**, **risk-adjusted returns**, **prediction accuracy**, and compare against market benchmarks.
 - **Embrace Innovation with Purpose**: Ensure innovations directly address the fund's business goals. Every feature should contribute to strategic value.
