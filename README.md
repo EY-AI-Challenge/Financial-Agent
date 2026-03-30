@@ -19,7 +19,7 @@ The dataset includes **historical financial data** from different assets, for ex
 - **Stocks:** AMZN, AAPL, GOOGL, MSFT, UDMY, NXE, SPY, CDR.WA, EH  
 - **Cryptocurrencies:** BTC-USD, ETH-USD  
 
-All data is from yahoo library (yfinance) stored in `.csv` files. 
+All data is from Yahoo library (yfinance) stored in `.csv` files. 
 
 ### Data Columns:
 - **Datetime / Date:** Timestamp of the market data entry (hourly or daily).
