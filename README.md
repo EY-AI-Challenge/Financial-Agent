@@ -41,23 +41,22 @@ All data is stored in `.csv` files in the `data/` directory, named based on asse
 
 ## 📦 Deliverables
 
-- ✅ A **working prototype** of your AI-powered investment solution.
-- ✅ An **organized and well-documented code** that can be reproduced.
-- ✅ A **concise pitch** presenting your solution to the judging panel as **investment stakeholders**.
-- ✅ *(Optional)* **Performance analysis** comparing your solution with traditional methods.
+- ✅ A working prototype of your strategic conversational assistant
+- ✅ Organized and well-documented code, that can be reproducible
+- ✅ A strategic presentation pitching your solution to the judging panel as if they were the client's executive stakeholders
+- ✅ A technical presentation pitching your solution to the judging panel as if they were the client's IT stakeholders
+- ✅ A frontend for the solution is mandatory for the live demo of the strategic presentation
+
+🔹 **Optional Enhancements**:  
+- Performance analysis vs traditional knowledge access methods
 
 <h2 align="center"> ⚠️ **Important Submission Requirement** ⚠️ </h2>
 <h3> ✅ Before the 14h00 deadline</h3>
 
-Submit a zip folder with:
-- The **Google Colab notebook** (with all cells run & outputs shown).
-- Screenshots of all **external tools/visualizations** used.
-
-Submit via email to: [eyaichallenge@pt.ey.com](mailto:eyaichallenge@pt.ey.com)
-
-Subject: `Stock Agent – GroupName`
-
-Include group member names in the email.
+Submit you solution to your specific branch:
+- Repository with the code of the solution developed
+  - The solution must be ready to run
+- A README file with the context of the solution and how to run it
 
 ---
 
@@ -72,60 +71,41 @@ Include group member names in the email.
 
 ---
 
-## 🛠 Tech & Tools
+## 🛠️ Tech & Tools
 
-🚨 **Mandatory Requirement**:  
-You **must** develop your solution in **Google Colab using Python**.
+- **Mandatory:**  
+  - Solution must be developed mainly using Python  
+  - You'll publish the solution into a specific branch of the challenge's repository
 
-Beyond that, you are **completely free** to choose your own:
-
-- **📚 Libraries and packages**  
-  Use any tools you need — e.g., `Pandas`, `Scikit-learn`, `LangChain`, etc.
-
-- **📈 Visualization tools**  
-  Python-based: `Matplotlib`, `Seaborn`  
-  BI tools: `Power BI`, `Tableau`
-
-- **🤖 AI assistants**  
-  Feel free to consult:  
-  `ChatGPT`, `GitHub Copilot`, `Gemini`, or any other
+- **Free to Choose:**  
+  - Libraries/Packages
+  - Visualization
+  - Frontend solution
+  - AI Assistants
 
 ---
 
-## ⏱ Time Management & Rules
+## ⏱️ Time Management & Rules
 
-- ⏳ You have **4 hours total** to complete your challenge  
-  🔒 **No extensions** will be allowed
-
-- 🗣 After the working session, deliver a **5-minute presentation**  
-  🎯 Simulate a **client-facing consulting pitch**
-
-- 👥 Each group is allowed:
-  - `1` **technical support** session (up to 5 minutes)
-  - `1` **business-related support** session (up to 5 minutes)
-
-> 🧠 Assistants will guide your thinking, not provide direct solutions
+- Total Time: **4 hours** – No extensions  
+- Final Presentations: **5 minutes each** – Simulate a client-facing pitch
+  - You must divide the team for the strategic and technical presentations
+- Support:
+  - 🧑‍💻 1 technical session (max 5 minutes)  
+  - 💼 1 business session (max 5 minutes)  
+  - **Note:** Assistants guide only — no direct solutions
 
 ---
 
 ## 📋 Strategy & Workflow Tips
 
-This is a **consulting-style challenge** with limited time. Keep these tips in mind:
+1. **Assign Roles Early** — e.g., data analyst, business strategist, presenter  
+2. **Work in Parallel** — Divide and conquer  
+3. **Start the Presentation Early** — Don’t wait until the last 10 minutes  
+4. **Be Realistic** — Focused and clear beats complex and incomplete  
 
-1. 👥 **Assign roles early**  
-   (e.g., a data person, a business analyst, and a presenter)
-
-2. 🔁 **Work in parallel**  
-   Don’t wait on each other. Split tasks and collaborate strategically.
-
-3. 🧑‍🏫 **Keep the presentation in mind**  
-   Start preparing early; don’t leave it to the last 10 minutes.
-
-4. ✅ **Be realistic**  
-   It’s better to deliver a **focused, clear, and well-explained solution** than a rushed or overly complex one.
-
-> 💡 You are not being judged only on technical accuracy —  
-> but also on how you **think**, **structure**, **work as a team**, and **communicate** your approach.
+💡 **Pro Tip:**  
+Judging includes **teamwork**, **structure**, and **communication**, not just technical quality
 
 ---
 
