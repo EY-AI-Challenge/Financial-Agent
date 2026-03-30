@@ -41,7 +41,7 @@ All data is stored in `.csv` files in the `data/` directory, named based on asse
 
 ## 📦 Deliverables
 
-- ✅ A working prototype of your strategic conversational assistant
+- ✅ A working prototype of your solution
 - ✅ Organized and well-documented code, that can be reproducible
 - ✅ A strategic presentation pitching your solution to the judging panel as if they were the client's executive stakeholders
 - ✅ A technical presentation pitching your solution to the judging panel as if they were the client's IT stakeholders
