@@ -15,11 +15,11 @@ Your mission is to create a **decision support platform** that transforms the fu
 
 ## 💡 Data
 
-The dataset includes **historical financial data** from 11 different assets:  
+The dataset includes **historical financial data** from different assets, for example: 
 - **Stocks:** AMZN, AAPL, GOOGL, MSFT, UDMY, NXE, SPY, CDR.WA, EH  
 - **Cryptocurrencies:** BTC-USD, ETH-USD  
 
-All data is stored in `.csv` files in the `data/` directory, named based on asset and frequency (e.g., `AMZ_hourly.csv`, `AMZ_daily.csv`), with the usage of the accelerator notebook.  
+All data is from yahoo library (yfinance) stored in `.csv` files. 
 
 ### Data Columns:
 - **Datetime / Date:** Timestamp of the market data entry (hourly or daily).
