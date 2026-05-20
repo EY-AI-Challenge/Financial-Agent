@@ -1,188 +1,374 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
+from __future__ import annotations
+
+import json
+import os
+import sys
 from datetime import datetime
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
+from pathlib import Path
 
-# ==========================================
-# 1. CONFIGURAÇÃO BASE E ESTILOS
-# ==========================================
-st.set_page_config(page_title="EY AI Portfolio Copilot", page_icon="🛡️", layout="wide", initial_sidebar_state="expanded")
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
 
-st.markdown("""
+BASE_DIR = Path(__file__).resolve().parents[1]
+SRC_DIR = BASE_DIR / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.append(str(SRC_DIR))
+
+from agent import available_assets, format_portfolio_analysis, get_payload_asset  # noqa: E402
+from agent import agent as financial_agent  # noqa: E402
+
+PAYLOAD_PATH = BASE_DIR / "outputs" / "frontend_payload.json"
+
+st.set_page_config(
+    page_title="EY AI Portfolio Copilot",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+st.markdown(
+    """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    .block-container {padding-top: 2rem; padding-bottom: 0rem;}
-    .stMetric {background-color: #1E1E1E; padding: 15px; border-radius: 5px; border: 1px solid #333;}
+    .block-container {padding-top: 1.5rem; padding-bottom: 1rem;}
+    .stMetric {
+        background-color: #111827;
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid #374151;
+    }
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
-# ==========================================
-# 2. GESTÃO DE ESTADO (SESSION STATE)
-# ==========================================
-if 'system_logs' not in st.session_state:
-    st.session_state.system_logs = ["[SISTEMA] Inicialização do Motor de IA e LangChain concluída."]
-if 'mensagens_langchain' not in st.session_state:
-    st.session_state.mensagens_langchain = [{"role": "assistant", "content": "Olá. Sou o EY AI Copilot. Analisei a sua distribuição do Donut Chart e os indicadores de risco. O que deseja otimizar hoje?"}]
 
-def add_log(message):
+@st.cache_data(ttl=300)
+def load_payload() -> dict:
+    if not PAYLOAD_PATH.exists():
+        return {}
+    return json.loads(PAYLOAD_PATH.read_text())
+
+
+@st.cache_data(ttl=300)
+def load_price_data() -> pd.DataFrame:
+    frames = []
+    daily_dir = BASE_DIR / "data" / "raw" / "daily"
+    for csv_path in sorted(daily_dir.glob("*.csv")):
+        frame = pd.read_csv(csv_path, usecols=["Date", "Adj Close"])
+        frame["Date"] = pd.to_datetime(frame["Date"])
+        frame = frame.rename(columns={"Adj Close": csv_path.stem}).set_index("Date")
+        frames.append(frame)
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, axis=1).sort_index()
+
+
+def asset_category(ticker: str) -> str:
+    if ticker in {"BTC-USD", "ETH-USD"}:
+        return "Crypto"
+    if ticker == "SPY":
+        return "ETF"
+    if ticker == "CDR.WA":
+        return "European Equity"
+    return "Equity"
+
+
+def build_assets_df(payload: dict) -> pd.DataFrame:
+    rows = []
+    for asset in payload.get("assets", []):
+        intelligence = asset.get("intelligence", {})
+        recommendation = asset.get("recommendation", {})
+        projection = asset.get("projection", {})
+        total_return = intelligence.get("total_return", {})
+        projected_range = projection.get("projected_range", {})
+        rows.append(
+            {
+                "Ticker": asset.get("ticker"),
+                "Category": asset_category(asset.get("ticker", "")),
+                "Rank": intelligence.get("asset_rank"),
+                "Current Price": intelligence.get("current_price"),
+                "Return 30D %": total_return.get("30d"),
+                "Return 1Y %": total_return.get("1y"),
+                "Return 5Y %": total_return.get("5y"),
+                "Volatility %": intelligence.get("annualized_volatility_pct"),
+                "Drawdown %": intelligence.get("max_drawdown_pct"),
+                "Sharpe": intelligence.get("sharpe_ratio"),
+                "Correlation SPY": intelligence.get("correlation_with_spy"),
+                "Risk Score": intelligence.get("risk_score"),
+                "Opportunity Score": intelligence.get("opportunity_score"),
+                "Action": recommendation.get("action"),
+                "Confidence": recommendation.get("confidence"),
+                "Risk Level": recommendation.get("risk_level"),
+                "Rationale": recommendation.get("rationale"),
+                "Key Drivers": ", ".join(recommendation.get("key_drivers", [])),
+                "Trend Outlook": projection.get("trend_outlook"),
+                "Projection Confidence": projection.get("projection_confidence"),
+                "Projection Low": projected_range.get("low"),
+                "Projection Mid": projected_range.get("mid"),
+                "Projection High": projected_range.get("high"),
+                "Projection Horizon Days": projection.get("projection_horizon_days"),
+                "Scenario Note": projection.get("scenario_note"),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("Rank").reset_index(drop=True)
+
+
+payload = load_payload()
+assets_df = build_assets_df(payload) if payload else pd.DataFrame()
+prices_df = load_price_data()
+
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {
+            "role": "assistant",
+            "content": "Portfolio copilot online. Ask for an asset analysis, a portfolio overview, or a risk explanation.",
+        }
+    ]
+
+if "system_logs" not in st.session_state:
+    st.session_state.system_logs = ["[SYSTEM] Frontend initialized with backend payload integration."]
+
+
+def add_log(message: str) -> None:
     timestamp = datetime.now().strftime("%H:%M:%S")
     st.session_state.system_logs.insert(0, f"[{timestamp}] {message}")
 
-# ==========================================
-# 3. MOTOR DE DADOS E SIMULAÇÃO
-# ==========================================
-@st.cache_data(ttl=600)
-def generate_enterprise_mock_data():
-    np.random.seed(42)
-    datas = pd.date_range(end=datetime.today(), periods=365)
-    ativos = ["AMZN", "AAPL", "GOOGL", "MSFT", "UDMY", "NXE", "SPY", "CDR.WA", "EH", "BTC-USD", "ETH-USD"]
-    df = pd.DataFrame(index=datas)
-    for ativo in ativos:
-        vol = 0.04 if "USD" in ativo else 0.012 
-        retornos = np.random.normal(0.0005, vol, len(datas))
-        if "USD" in ativo: retornos[-30] = -0.15 
-        df[ativo] = np.cumprod(1 + retornos) * 100
-    return df, ativos
 
-df_mercado, lista_ativos = generate_enterprise_mock_data()
-
-portfolio = {
-    "Ações Tech (AAPL, MSFT)": 45,
-    "Criptomoedas (BTC, ETH)": 35,
-    "Ativos Seguros (SPY)": 15,
-    "Liquidez (Dinheiro)": 5
-}
-
-# ==========================================
-# 4. BARRA LATERAL (SEGURANÇA & PARÂMETROS)
-# ==========================================
 with st.sidebar:
-    st.image("https://github.com/EYAIChallenge/Overview/raw/main/EY_Logo_Beam_RGB_White_Yellow.png", width=80)
-    st.title("Painel de Controlo")
-
-    st.markdown("### 🔑 Ligação OpenAI (LangChain)")
-    api_key = st.text_input("Chave da API (sk-...)", type="password", help="Cole aqui a sua chave durante a demo.")
+    st.title("EY Portfolio Copilot")
+    api_key = st.text_input("OpenAI API Key", type="password", help="Used by the chat agent.")
     if api_key:
-        st.success("API Ligada")
+        os.environ["OPENAI_API_KEY"] = api_key
+        st.success("Chat agent ready")
     else:
-        st.error("API Desligada")
+        st.warning("Add an API key to enable the chat agent")
 
-    st.markdown("### ⚙️ Parâmetros Base")
-    capital_inicial = st.number_input("AUM (Capital) $", value=5000000, step=500000)
-    perfil_risco = st.selectbox("Mandato de Risco:", ["Conservador", "Moderado", "Agressivo"])
-    ativo_alvo = st.selectbox("Foco Analítico:", lista_ativos, index=1)
+    st.markdown("### Data status")
+    if payload:
+        st.write(f"Payload updated: `{payload.get('generated_at', 'unknown')}`")
+        st.write(f"Assets loaded: `{payload.get('portfolio_summary', {}).get('asset_count', 0)}`")
+    else:
+        st.error("Missing outputs/frontend_payload.json")
 
-# ==========================================
-# 5. HEADER E KPIS DE TOPO
-# ==========================================
-st.title("📊 EY Sentinel — Plataforma de Inteligência Financeira")
+    selected_asset = st.selectbox(
+        "Focus asset",
+        assets_df["Ticker"].tolist() if not assets_df.empty else available_assets(),
+        index=0 if assets_df.empty else min(1, len(assets_df) - 1),
+    )
 
-retorno_anual = (df_mercado[ativo_alvo].iloc[-1] / df_mercado[ativo_alvo].iloc[-252]) - 1
-volatilidade_anual = df_mercado[ativo_alvo].pct_change().std() * np.sqrt(252)
-sharpe = (retorno_anual - 0.03) / volatilidade_anual if volatilidade_anual > 0 else 0
-max_drawdown = (df_mercado[ativo_alvo] / df_mercado[ativo_alvo].cummax() - 1).min()
+st.title("EY Sentinel — Investment Decision Support Platform")
+
+if not payload or assets_df.empty:
+    st.error("Backend payload not found. Run `python src/build_frontend_payload.py` first.")
+    st.stop()
+
+selected_row = assets_df.loc[assets_df["Ticker"] == selected_asset].iloc[0]
+portfolio_summary = payload.get("portfolio_summary", {})
 
 col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Capital Atualizado", f"${capital_inicial * (1 + retorno_anual):,.0f}", f"{retorno_anual*100:.2f}% YTD")
-col2.metric("Volatilidade (Risco)", f"{volatilidade_anual*100:.2f}%", "- Detetada Anomalia", delta_color="inverse")
-col3.metric("Sharpe Ratio", f"{sharpe:.2f}", "Ajuste Premium")
-col4.metric("Max Drawdown", f"{max_drawdown*100:.2f}%", "Risco Histórico", delta_color="inverse")
-col5.metric("Status do LangChain", "🟢 ONLINE" if api_key else "🔴 S/ CHAVE", "A aguardar Prompt")
+col1.metric("Focus Asset", selected_asset, f"Rank #{int(selected_row['Rank'])}")
+col2.metric("5Y Return", f"{selected_row['Return 5Y %']:.2f}%", f"30D {selected_row['Return 30D %']:.2f}%")
+col3.metric("Volatility", f"{selected_row['Volatility %']:.2f}%", selected_row["Risk Level"])
+col4.metric("Recommendation", selected_row["Action"].upper(), selected_row["Confidence"])
+col5.metric("Projection", selected_row["Trend Outlook"].upper(), f"{int(selected_row['Projection Horizon Days'])} days")
 
 st.markdown("---")
 
-# ==========================================
-# 6. MOTOR DE INTERFACE (SEPARADORES)
-# ==========================================
-tab_dash, tab_tech, tab_risk, tab_ai, tab_logs = st.tabs([
-    "📈 Visão Global (Donut)", "🔬 Análise Técnica", "🕸️ Mapa de Risco", "🤖 Agente LangChain", "🖥️ Logs"
-])
+tab_overview, tab_asset, tab_risk, tab_chat, tab_logs = st.tabs(
+    ["Portfolio Overview", "Asset Drilldown", "Risk Map", "AI Copilot", "System Logs"]
+)
 
-with tab_dash:
-    st.markdown("### Distribuição Atual do Fundo")
-    c1, c2 = st.columns([1, 1])
-    with c1:
-        fig_donut = go.Figure(data=[go.Pie(
-            labels=list(portfolio.keys()),
-            values=list(portfolio.values()),
-            hole=0.4,
-            marker_colors=["#1f77b4", "#ff9900", "#2ca02c", "#d62728"]
-        )])
-        fig_donut.update_layout(height=400, template="plotly_dark", margin=dict(t=0, b=0, l=0, r=0))
-        st.plotly_chart(fig_donut, use_container_width=True)
-    with c2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.info("💡 **Aviso Estratégico:** A exposição a Criptomoedas está em 35%. Consulte o Agente LangChain para estratégias de mitigação.")
-        st.write(f"**Ativo em Foco:** {ativo_alvo} apresenta um Sharpe Ratio de {sharpe:.2f}.")
+with tab_overview:
+    left, right = st.columns([1, 1])
+    with left:
+        category_view = (
+            assets_df.groupby("Category")["Opportunity Score"]
+            .mean()
+            .reset_index()
+            .rename(columns={"Opportunity Score": "Average Opportunity Score"})
+        )
+        fig = px.pie(
+            category_view,
+            names="Category",
+            values="Average Opportunity Score",
+            hole=0.45,
+            title="Investment universe by category signal",
+        )
+        fig.update_layout(template="plotly_dark", height=380)
+        st.plotly_chart(fig, use_container_width=True)
 
-with tab_tech:
-    st.markdown(f"### Inspeção Profunda: {ativo_alvo}")
-    df_ohlc = pd.DataFrame(index=df_mercado.index[-90:])
-    df_ohlc['Close'] = df_mercado[ativo_alvo].iloc[-90:]
-    df_ohlc['Open'] = df_ohlc['Close'].shift(1).fillna(df_ohlc['Close'])
-    df_ohlc['High'] = df_ohlc[['Open', 'Close']].max(axis=1) * 1.02
-    df_ohlc['Low'] = df_ohlc[['Open', 'Close']].min(axis=1) * 0.98
-    df_ohlc['MA20'] = df_ohlc['Close'].rolling(window=20).mean()
-    df_ohlc['Upper'] = df_ohlc['MA20'] + 2 * df_ohlc['Close'].rolling(window=20).std()
-    df_ohlc['Lower'] = df_ohlc['MA20'] - 2 * df_ohlc['Close'].rolling(window=20).std()
+    with right:
+        st.subheader("Portfolio Summary")
+        st.write(f"Top opportunities: `{', '.join(portfolio_summary.get('top_opportunities', []))}`")
+        st.write(f"Highest risk assets: `{', '.join(portfolio_summary.get('highest_risk_assets', []))}`")
+        st.write(f"Diversification candidates: `{', '.join(portfolio_summary.get('diversification_candidates', []))}`")
+        st.write(f"Average opportunity score: `{portfolio_summary.get('average_opportunity_score', 'n/a')}`")
+        st.write(f"Average risk score: `{portfolio_summary.get('average_risk_score', 'n/a')}`")
 
-    fig_tech = go.Figure()
-    fig_tech.add_trace(go.Candlestick(x=df_ohlc.index, open=df_ohlc['Open'], high=df_ohlc['High'], low=df_ohlc['Low'], close=df_ohlc['Close'], name='Preço'))
-    fig_tech.add_trace(go.Scatter(x=df_ohlc.index, y=df_ohlc['Upper'], line=dict(color='gray', dash='dot'), name='Banda Superior'))
-    fig_tech.add_trace(go.Scatter(x=df_ohlc.index, y=df_ohlc['Lower'], line=dict(color='gray', dash='dot'), name='Banda Inferior', fill='tonexty', fillcolor='rgba(128,128,128,0.1)'))
-    fig_tech.update_layout(height=400, template="plotly_dark", xaxis_rangeslider_visible=False)
-    st.plotly_chart(fig_tech, use_container_width=True)
+    st.subheader("Asset Ranking Table")
+    st.dataframe(
+        assets_df[
+            [
+                "Ticker",
+                "Category",
+                "Rank",
+                "Action",
+                "Confidence",
+                "Return 5Y %",
+                "Volatility %",
+                "Risk Score",
+                "Opportunity Score",
+                "Trend Outlook",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+with tab_asset:
+    asset_payload = get_payload_asset(selected_asset)
+    if not asset_payload:
+        st.warning("No asset payload available.")
+    else:
+        left, right = st.columns([1.1, 0.9])
+        with left:
+            st.subheader(f"{selected_asset} historical performance")
+            if selected_asset in prices_df.columns:
+                chart_df = prices_df[[selected_asset]].dropna().reset_index()
+                chart_df["Normalized"] = chart_df[selected_asset] / chart_df[selected_asset].iloc[0] * 100
+                fig = px.line(chart_df, x="Date", y="Normalized", title=f"{selected_asset} normalized price (base 100)")
+                fig.update_layout(template="plotly_dark", height=360)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Historical series not available for chart.")
+
+            projection_df = pd.DataFrame(
+                {
+                    "Scenario": ["Low", "Mid", "High"],
+                    "Projected Price": [
+                        selected_row["Projection Low"],
+                        selected_row["Projection Mid"],
+                        selected_row["Projection High"],
+                    ],
+                }
+            )
+            fig = px.bar(
+                projection_df,
+                x="Scenario",
+                y="Projected Price",
+                color="Scenario",
+                title=f"{selected_asset} model-based scenario projection",
+            )
+            fig.update_layout(template="plotly_dark", height=320, showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
+
+        with right:
+            st.subheader("Recommendation")
+            st.metric("Action", selected_row["Action"].upper(), selected_row["Confidence"])
+            st.write(selected_row["Rationale"])
+            st.write(f"Key drivers: `{selected_row['Key Drivers']}`")
+
+            st.subheader("Projection")
+            st.write(f"Trend outlook: `{selected_row['Trend Outlook']}`")
+            st.write(f"Projection confidence: `{selected_row['Projection Confidence']}`")
+            st.write(f"Projected range: `{selected_row['Projection Low']}` to `{selected_row['Projection High']}`")
+            st.write(selected_row["Scenario Note"])
+
+            st.subheader("Core metrics")
+            metric_table = pd.DataFrame(
+                {
+                    "Metric": [
+                        "Return 30D %",
+                        "Return 1Y %",
+                        "Return 5Y %",
+                        "Volatility %",
+                        "Drawdown %",
+                        "Sharpe",
+                        "Correlation SPY",
+                        "Risk Score",
+                        "Opportunity Score",
+                    ],
+                    "Value": [
+                        selected_row["Return 30D %"],
+                        selected_row["Return 1Y %"],
+                        selected_row["Return 5Y %"],
+                        selected_row["Volatility %"],
+                        selected_row["Drawdown %"],
+                        selected_row["Sharpe"],
+                        selected_row["Correlation SPY"],
+                        selected_row["Risk Score"],
+                        selected_row["Opportunity Score"],
+                    ],
+                }
+            )
+            st.dataframe(metric_table, use_container_width=True, hide_index=True)
 
 with tab_risk:
-    st.markdown("### Deteção de Risco Oculto (Correlação)")
-    corr = df_mercado.pct_change().corr()
-    fig_corr = px.imshow(corr, text_auto=".1f", aspect="auto", color_continuous_scale="RdBu_r")
-    fig_corr.update_layout(height=450, template="plotly_dark")
-    st.plotly_chart(fig_corr, use_container_width=True)
+    left, right = st.columns([1, 1])
+    with left:
+        fig = px.scatter(
+            assets_df,
+            x="Volatility %",
+            y="Return 5Y %",
+            color="Action",
+            size="Opportunity Score",
+            text="Ticker",
+            hover_data=["Risk Score", "Sharpe", "Trend Outlook"],
+            title="Risk vs return",
+        )
+        fig.update_traces(textposition="top center")
+        fig.update_layout(template="plotly_dark", height=430)
+        st.plotly_chart(fig, use_container_width=True)
 
-with tab_ai:
-    st.markdown("### 🧠 Conselheiro Estratégico (Powered by LangChain & OpenAI)")
-    chat_container = st.container(height=350)
+    with right:
+        corr_df = pd.DataFrame(payload.get("correlation_matrix", {})).sort_index()
+        fig = px.imshow(
+            corr_df,
+            text_auto=".2f",
+            color_continuous_scale="RdBu_r",
+            zmin=-1,
+            zmax=1,
+            title="Correlation matrix",
+        )
+        fig.update_layout(template="plotly_dark", height=430)
+        st.plotly_chart(fig, use_container_width=True)
+
+with tab_chat:
+    st.subheader("AI Copilot")
+    st.caption("This chat uses the same CSV files and frontend payload that power the dashboard.")
+
+    chat_container = st.container(height=360)
     with chat_container:
-        for msg in st.session_state.mensagens_langchain:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
 
-    if prompt := st.chat_input("Ex: Como devo proteger os meus 35% de Cripto no fim de semana?"):
-        st.session_state.mensagens_langchain.append({"role": "user", "content": prompt})
-        add_log(f"Chamada LangChain iniciada: '{prompt[:20]}...'")
-
+    if prompt := st.chat_input("Ask about AAPL, BTC-USD, risk, projections, or the whole portfolio"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        add_log(f"Agent request: {prompt[:60]}")
         with chat_container:
             with st.chat_message("user"):
                 st.markdown(prompt)
-
             with st.chat_message("assistant"):
-                if not api_key:
-                    erro_msg = "⚠️ ERRO: Insira a Chave OpenAI na barra lateral."
-                    st.error(erro_msg)
-                    st.session_state.mensagens_langchain.append({"role": "assistant", "content": erro_msg})
+                if not os.getenv("OPENAI_API_KEY"):
+                    st.error("Add your OpenAI API key in the sidebar to enable the copilot.")
                 else:
-                    with st.spinner("A consultar o modelo preditivo OpenAI..."):
-                        try:
-                            chat_ia = ChatOpenAI(temperature=0.3, openai_api_key=api_key, model_name="gpt-3.5-turbo")
-                            texto_contexto = f"A alocação do fundo é: {portfolio}. Perfil Risco: {perfil_risco}. Ativo Alvo: {ativo_alvo}. Responde como um consultor da EY."
-                            system_prompt = SystemMessage(content=texto_contexto)
-                            user_prompt = HumanMessage(content=prompt)
+                    try:
+                        response = financial_agent.invoke(prompt)
+                        content = response["output"]
+                        st.markdown(content)
+                        st.session_state.messages.append({"role": "assistant", "content": content})
+                        add_log("Agent response delivered successfully.")
+                    except Exception as error:
+                        st.error(f"Agent error: {error}")
+                        add_log(f"Agent error: {error}")
 
-                            resposta = chat_ia.invoke([system_prompt, user_prompt])
-                            st.markdown(resposta.content)
-                            st.session_state.mensagens_langchain.append({"role": "assistant", "content": resposta.content})
-                            add_log("Resposta LangChain recebida com sucesso.")
-
-                        except Exception as e:
-                            st.error(f"Falha na API: {e}")
-                            add_log(f"Erro LangChain: {e}")
+    with st.expander("Backend context snapshot"):
+        st.code(format_portfolio_analysis(), language="text")
 
 with tab_logs:
-    st.markdown("### 🖥️ Terminal de Atividade")
     st.code("\n".join(st.session_state.system_logs), language="bash")

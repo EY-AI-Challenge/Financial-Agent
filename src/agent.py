@@ -1,28 +1,30 @@
-from langchain_openai import ChatOpenAI
-from pathlib import Path
+from __future__ import annotations
+
 import json
 import os
 import re
+from pathlib import Path
+
+from langchain_openai import ChatOpenAI
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 RAW_DATA_DIR = BASE_DIR / "data" / "raw"
 FRONTEND_PAYLOAD_PATH = BASE_DIR / "outputs" / "frontend_payload.json"
 
-my_api_key = os.getenv("OPENAI_API_KEY")
-
-if not my_api_key:
-    raise RuntimeError(
-        "OPENAI_API_KEY is not set. Export it before running main.py.")
-
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    api_key=my_api_key
-)
+_cached_agent = None
 
 
 def risk_tool(asset: str) -> str:
     """Analyzes the financial risk of an asset."""
     return f"{asset} has moderate risk"
+
+
+def load_frontend_payload() -> dict:
+    if not FRONTEND_PAYLOAD_PATH.exists():
+        return {}
+
+    with FRONTEND_PAYLOAD_PATH.open() as payload_file:
+        return json.load(payload_file)
 
 
 def available_assets() -> list[str]:
@@ -35,14 +37,6 @@ def available_assets() -> list[str]:
         if ticker:
             assets.add(ticker.upper())
     return sorted(assets)
-
-
-def load_frontend_payload() -> dict:
-    if not FRONTEND_PAYLOAD_PATH.exists():
-        return {}
-
-    with FRONTEND_PAYLOAD_PATH.open() as payload_file:
-        return json.load(payload_file)
 
 
 def get_payload_asset(asset: str) -> dict | None:
@@ -107,14 +101,16 @@ def format_frontend_analysis(asset: str) -> str:
     ]
 
     if portfolio_summary:
-        lines.extend([
-            f"Portfolio asset count: {portfolio_summary.get('asset_count', 'n/a')}",
-            f"Top opportunities: {', '.join(portfolio_summary.get('top_opportunities', []))}",
-            f"Highest risk assets: {', '.join(portfolio_summary.get('highest_risk_assets', []))}",
-            f"Diversification candidates: {', '.join(portfolio_summary.get('diversification_candidates', []))}",
-            f"Average opportunity score: {portfolio_summary.get('average_opportunity_score', 'n/a')}",
-            f"Average risk score: {portfolio_summary.get('average_risk_score', 'n/a')}",
-        ])
+        lines.extend(
+            [
+                f"Portfolio asset count: {portfolio_summary.get('asset_count', 'n/a')}",
+                f"Top opportunities: {', '.join(portfolio_summary.get('top_opportunities', []))}",
+                f"Highest risk assets: {', '.join(portfolio_summary.get('highest_risk_assets', []))}",
+                f"Diversification candidates: {', '.join(portfolio_summary.get('diversification_candidates', []))}",
+                f"Average opportunity score: {portfolio_summary.get('average_opportunity_score', 'n/a')}",
+                f"Average risk score: {portfolio_summary.get('average_risk_score', 'n/a')}",
+            ]
+        )
 
     if not asset_payload:
         return "\n".join(lines + [f"No asset-level frontend analysis found for {asset}."])
@@ -125,38 +121,40 @@ def format_frontend_analysis(asset: str) -> str:
     total_return = intelligence.get("total_return", {})
     projected_range = projection.get("projected_range", {})
 
-    lines.extend([
-        f"Asset rank: {intelligence.get('asset_rank', 'n/a')}",
-        f"Current price from payload: {intelligence.get('current_price', 'n/a')}",
-        f"Payload date range: {intelligence.get('start_date', 'n/a')} to {intelligence.get('end_date', 'n/a')}",
-        f"30d return: {total_return.get('30d', 'n/a')}%",
-        f"1y return: {total_return.get('1y', 'n/a')}%",
-        f"5y return: {total_return.get('5y', 'n/a')}%",
-        f"Annualized return: {intelligence.get('annualized_return_pct', 'n/a')}%",
-        f"Annualized volatility: {intelligence.get('annualized_volatility_pct', 'n/a')}%",
-        f"Max drawdown: {intelligence.get('max_drawdown_pct', 'n/a')}%",
-        f"Sharpe ratio: {intelligence.get('sharpe_ratio', 'n/a')}",
-        f"Correlation with SPY: {intelligence.get('correlation_with_spy', 'n/a')}",
-        f"24h return: {intelligence.get('recent_return_24h_pct', 'n/a')}%",
-        f"5d return: {intelligence.get('recent_return_5d_pct', 'n/a')}%",
-        f"Risk score: {intelligence.get('risk_score', 'n/a')}",
-        f"Opportunity score: {intelligence.get('opportunity_score', 'n/a')}",
-        f"Recommended action: {recommendation.get('action', 'n/a')}",
-        f"Recommendation confidence: {recommendation.get('confidence', 'n/a')}",
-        f"Risk level: {recommendation.get('risk_level', 'n/a')}",
-        f"Recommendation rationale: {recommendation.get('rationale', 'n/a')}",
-        f"Key drivers: {', '.join(recommendation.get('key_drivers', []))}",
-        f"Projection horizon: {projection.get('projection_horizon_days', 'n/a')} days",
-        f"Trend outlook: {projection.get('trend_outlook', 'n/a')}",
-        f"Projection confidence: {projection.get('projection_confidence', 'n/a')}",
-        (
-            "Projected range: "
-            f"low {projected_range.get('low', 'n/a')}, "
-            f"mid {projected_range.get('mid', 'n/a')}, "
-            f"high {projected_range.get('high', 'n/a')}"
-        ),
-        f"Scenario note: {projection.get('scenario_note', 'n/a')}",
-    ])
+    lines.extend(
+        [
+            f"Asset rank: {intelligence.get('asset_rank', 'n/a')}",
+            f"Current price from payload: {intelligence.get('current_price', 'n/a')}",
+            f"Payload date range: {intelligence.get('start_date', 'n/a')} to {intelligence.get('end_date', 'n/a')}",
+            f"30d return: {total_return.get('30d', 'n/a')}%",
+            f"1y return: {total_return.get('1y', 'n/a')}%",
+            f"5y return: {total_return.get('5y', 'n/a')}%",
+            f"Annualized return: {intelligence.get('annualized_return_pct', 'n/a')}%",
+            f"Annualized volatility: {intelligence.get('annualized_volatility_pct', 'n/a')}%",
+            f"Max drawdown: {intelligence.get('max_drawdown_pct', 'n/a')}%",
+            f"Sharpe ratio: {intelligence.get('sharpe_ratio', 'n/a')}",
+            f"Correlation with SPY: {intelligence.get('correlation_with_spy', 'n/a')}",
+            f"24h return: {intelligence.get('recent_return_24h_pct', 'n/a')}%",
+            f"5d return: {intelligence.get('recent_return_5d_pct', 'n/a')}%",
+            f"Risk score: {intelligence.get('risk_score', 'n/a')}",
+            f"Opportunity score: {intelligence.get('opportunity_score', 'n/a')}",
+            f"Recommended action: {recommendation.get('action', 'n/a')}",
+            f"Recommendation confidence: {recommendation.get('confidence', 'n/a')}",
+            f"Risk level: {recommendation.get('risk_level', 'n/a')}",
+            f"Recommendation rationale: {recommendation.get('rationale', 'n/a')}",
+            f"Key drivers: {', '.join(recommendation.get('key_drivers', []))}",
+            f"Projection horizon: {projection.get('projection_horizon_days', 'n/a')} days",
+            f"Trend outlook: {projection.get('trend_outlook', 'n/a')}",
+            f"Projection confidence: {projection.get('projection_confidence', 'n/a')}",
+            (
+                "Projected range: "
+                f"low {projected_range.get('low', 'n/a')}, "
+                f"mid {projected_range.get('mid', 'n/a')}, "
+                f"high {projected_range.get('high', 'n/a')}"
+            ),
+            f"Scenario note: {projection.get('scenario_note', 'n/a')}",
+        ]
+    )
 
     correlation_matrix = payload.get("correlation_matrix", {})
     asset_correlations = correlation_matrix.get(asset.upper(), {})
@@ -282,77 +280,99 @@ def financial_analysis_tool(request: str) -> str:
         f"Maximum drawdown: {max_drawdown:.2f}%\n"
         f"20-period moving average: {latest_ma20:.2f}\n"
         f"50-period moving average: {latest_ma50:.2f}\n"
-        f"Trend signal: {trend}\n"
-        "\n"
+        f"Trend signal: {trend}\n\n"
         f"{frontend_analysis}\n"
-        "Use both the CSV indicators and frontend graphical payload to explain risk, trend, recommendation, projection, and investment implications."
+        "Use both the CSV indicators and frontend graphical payload to explain risk, trend, recommendation, projection, correlations, and investment implications."
     )
 
 
-try:
-    from langchain.agents import initialize_agent
-    from langchain.tools import Tool
+def _build_llm() -> ChatOpenAI:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set. Export it before invoking the agent.")
+    return ChatOpenAI(model="gpt-4o-mini", api_key=api_key)
 
-    tools = [
-        Tool(
-            name="Risk Analyzer",
-            func=risk_tool,
-            description="Analyzes financial risk"
-        ),
-        Tool(
-            name="Financial Analysis",
-            func=financial_analysis_tool,
-            description=(
-                "Analyzes one asset using data/raw/daily or data/raw/hourly CSV files "
-                "and outputs/frontend_payload.json. "
-                "Input should include an asset ticker and optional timeframe, "
-                "for example 'AAPL daily' or 'BTC-USD hourly'. "
-                "calculates return, volatility, moving averages and drawdown, "
-                "then enriches the answer with frontend graphical analysis, recommendations, "
-                "portfolio rankings, correlations, and projections."
-            )
+
+def _build_agent():
+    llm = _build_llm()
+    try:
+        from langchain.agents import initialize_agent
+        from langchain.tools import Tool
+
+        tools = [
+            Tool(
+                name="Risk Analyzer",
+                func=risk_tool,
+                description="Analyzes financial risk",
+            ),
+            Tool(
+                name="Financial Analysis",
+                func=financial_analysis_tool,
+                description=(
+                    "Analyzes one asset using data/raw/daily or data/raw/hourly CSV files "
+                    "and outputs/frontend_payload.json. "
+                    "Input should include an asset ticker and optional timeframe, "
+                    "for example 'AAPL daily' or 'BTC-USD hourly'. "
+                    "Calculates return, volatility, moving averages and drawdown, "
+                    "then enriches the answer with frontend graphical analysis, recommendations, "
+                    "portfolio rankings, correlations, and projections."
+                ),
+            ),
+        ]
+
+        return initialize_agent(
+            tools,
+            llm,
+            agent="zero-shot-react-description",
+            verbose=True,
         )
-    ]
+    except ImportError:
+        from langchain.agents import create_agent
+        from langchain.tools import tool
 
-    agent = initialize_agent(
-        tools,
-        llm,
-        agent="zero-shot-react-description",
-        verbose=True
-    )
-except ImportError:
-    from langchain.agents import create_agent
-    from langchain.tools import tool
+        @tool("risk_analyzer")
+        def risk_analyzer(asset: str) -> str:
+            """Analyzes the financial risk of an asset."""
+            return risk_tool(asset)
 
-    @tool("risk_analyzer")
-    def risk_analyzer(asset: str) -> str:
-        """Analyzes the financial risk of an asset."""
-        return risk_tool(asset)
+        @tool("financial_analysis")
+        def financial_analysis(request: str) -> str:
+            """Analyzes one asset from CSV files and frontend_payload.json. Include ticker and optional timeframe."""
+            return financial_analysis_tool(request)
 
-    @tool("financial_analysis")
-    def financial_analysis(request: str) -> str:
-        """Analyzes one asset from CSV files and frontend_payload.json. Include ticker and optional timeframe."""
-        return financial_analysis_tool(request)
+        created_agent = create_agent(
+            model=llm,
+            tools=[risk_analyzer, financial_analysis],
+            system_prompt=(
+                "You are a financial assistant. When the user asks about an asset, "
+                "use financial_analysis to ground your answer in the CSV data and "
+                "the frontend_payload.json graphical analysis. "
+                "The available datasets are daily and hourly. "
+                "Explain trend, volatility, drawdown, risk, recommendation, projection, "
+                "correlations, and investment implications."
+            ),
+        )
 
-    _agent = create_agent(
-        model=llm,
-        tools=[risk_analyzer, financial_analysis],
-        system_prompt=(
-            "You are a financial assistant. When the user asks about an asset, "
-            "use financial_analysis to ground your answer in the CSV data and "
-            "the frontend_payload.json graphical analysis. "
-            "The available datasets are daily and hourly. "
-            "Explain trend, volatility, drawdown, risk, recommendation, projection, "
-            "correlations, and investment implications."
-        ),
-    )
+        class CreatedAgentWrapper:
+            def invoke(self, question: str):
+                result = created_agent.invoke({"messages": [{"role": "user", "content": question}]})
+                messages = result.get("messages", [])
+                output = messages[-1].content if messages else str(result)
+                return {"output": output}
 
-    class AgentWrapper:
-        def invoke(self, question: str):
-            result = _agent.invoke(
-                {"messages": [{"role": "user", "content": question}]})
-            messages = result.get("messages", [])
-            output = messages[-1].content if messages else str(result)
-            return {"output": output}
+        return CreatedAgentWrapper()
 
-    agent = AgentWrapper()
+
+def get_agent():
+    global _cached_agent
+    if _cached_agent is None:
+        _cached_agent = _build_agent()
+    return _cached_agent
+
+
+class AgentWrapper:
+    def invoke(self, question: str):
+        return get_agent().invoke(question)
+
+
+agent = AgentWrapper()
