@@ -1,0 +1,46 @@
+# Core data
+pandas>=1.5.0
+numpy>=1.23.0
+
+# ML models
+lightgbm>=4.0.0
+xgboost>=1.7.0          # optional, used as reference comparison
+scikit-learn>=1.2.0
+
+# Time-series / statistical models
+prophet>=1.1.0           # Facebook/Meta Prophet
+
+# Technical indicators
+ta>=0.10.0               # Technical Analysis library (RSI, MACD, ATR, …)
+
+# Visualisation
+matplotlib>=3.6.0
+seaborn>=0.12.0
+
+# ── Pre-trained Foundation Model (optional but recommended) ────────────────
+# Amazon Chronos (pre-trained T5-based time-series foundation model)
+# Paper: https://arxiv.org/abs/2403.07815
+# Requires HuggingFace access to download weights on first run.
+#
+# Install with:
+#   pip install chronos-forecasting
+#
+# The predictor works without Chronos (LightGBM + Prophet only) but
+# Chronos adds a zero-shot prior that improves short-term accuracy.
+# ── Uncomment if you have HuggingFace access ──
+# chronos-forecasting>=1.0.0
+# torch>=2.0.0
+# transformers>=4.35.0
+
+# ── Other Pre-Trained Foundation Models (alternative to Chronos) ──────────
+# Moirai (Salesforce, 2024):
+#   pip install uni2ts
+#
+# TimesFM (Google DeepMind, 2024):
+#   pip install timesfm
+#
+# MOMENT (CMU, 2024):
+#   pip install momentfm
+#
+# Lag-Llama (2023):
+#   pip install lag-llama
