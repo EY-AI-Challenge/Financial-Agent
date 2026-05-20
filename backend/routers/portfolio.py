@@ -2,24 +2,23 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
-from .. import schemas, models, auth, crud, database
+from .. import schemas, models, crud, database
 
 router = APIRouter(
     prefix="/api/portfolio",
     tags=["Portfolio"],
-    dependencies=[Depends(auth.get_current_user)],
 )
 
-@router.get("/", response_model=List[schemas.UserPortfolio])
-def read_user_portfolio(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+@router.get("/", response_model=List[schemas.Portfolio])
+def read_portfolio(db: Session = Depends(database.get_db)):
     """
-    Retrieve all portfolio transactions for the current user.
+    Retrieve all portfolio transactions.
     """
-    return crud.get_portfolio_by_user(db, user_id=current_user.id)
+    return crud.get_portfolio(db)
 
-@router.post("/", response_model=schemas.UserPortfolio)
-def add_portfolio_transaction(transaction: schemas.UserPortfolioCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+@router.post("/", response_model=schemas.Portfolio)
+def add_portfolio_transaction(transaction: schemas.PortfolioCreate, db: Session = Depends(database.get_db)):
     """
-    Add a new 'BUY' or 'SELL' transaction to the current user's portfolio.
+    Add a new 'BUY' or 'SELL' transaction to the portfolio.
     """
-    return crud.create_portfolio_transaction(db=db, transaction=transaction, user_id=current_user.id)
+    return crud.create_portfolio_transaction(db=db, transaction=transaction)

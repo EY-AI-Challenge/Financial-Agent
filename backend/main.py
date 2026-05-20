@@ -1,14 +1,27 @@
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
-from . import models, schemas, auth, database, data_router, updater, crud
-from .routers import users, portfolio, recommendations
+from . import models, schemas, database, data_router, updater, crud
+from .routers import portfolio, recommendations
 import asyncio
 
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="Financial Decision Support API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:80",
+        "http://127.0.0.1:80",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup_event():
@@ -19,38 +32,9 @@ async def startup_event():
 
 # --- Routers ---
 app.include_router(data_router.router)
-app.include_router(users.router)
 app.include_router(portfolio.router)
 app.include_router(recommendations.router)
 
-
-# --- Authentication Endpoints ---
-@app.post("/api/auth/register", response_model=schemas.Token, tags=["Authentication"])
-def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
-    db_user = auth.get_user(db, username=user.username)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    hashed_pwd = auth.get_password_hash(user.password)
-    db_user = models.User(username=user.username, hashed_password=hashed_pwd)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    token = auth.create_access_token({"sub": db_user.username})
-    return {"access_token": token, "token_type": "bearer"}
-
-@app.post("/api/auth/login", response_model=schemas.Token, tags=["Authentication"])
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    user = auth.get_user(db, username=form_data.username)
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token = auth.create_access_token(
-        data={"sub": user.username}
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
 
 # --- Public Endpoints ---
 @app.get("/api/tickers", response_model=List[schemas.Ticker], tags=["Data"])

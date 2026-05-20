@@ -15,7 +15,7 @@ class TickerCreate(TickerBase):
 class Ticker(TickerBase):
     last_updated: Optional[datetime] = None
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- HistoricalPriceData Schemas ---
 class HistoricalPriceDataBase(BaseModel):
@@ -29,7 +29,7 @@ class HistoricalPriceDataBase(BaseModel):
 class HistoricalPriceData(HistoricalPriceDataBase):
     ticker_symbol: str
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- AIPrediction Schemas ---
 class AIPredictionBase(BaseModel):
@@ -43,7 +43,7 @@ class AIPrediction(AIPredictionBase):
     id: int
     generated_at: datetime
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- InvestmentRecommendation Schemas ---
 class InvestmentRecommendationBase(BaseModel):
@@ -54,49 +54,23 @@ class InvestmentRecommendationBase(BaseModel):
 
 class InvestmentRecommendation(InvestmentRecommendationBase):
     id: int
-    user_id: int
     created_at: datetime
     class Config:
-        orm_mode = True
+        from_attributes = True
 
-# --- UserPortfolio Schemas ---
-class UserPortfolioBase(BaseModel):
+# --- Portfolio Schemas ---
+class PortfolioBase(BaseModel):
     ticker_symbol: str
     transaction_type: str
     quantity: Decimal
     price_per_unit: Decimal
 
-class UserPortfolioCreate(UserPortfolioBase):
+class PortfolioCreate(PortfolioBase):
     recommendation_id: Optional[int] = None
 
-class UserPortfolio(UserPortfolioBase):
+class Portfolio(PortfolioBase):
     id: int
-    user_id: int
     transaction_date: datetime
     recommendation_id: Optional[int] = None
     class Config:
-        orm_mode = True
-
-# --- User Schemas ---
-class UserBase(BaseModel):
-    username: str
-
-class UserCreate(UserBase):
-    password: str
-
-class User(UserBase):
-    id: int
-    created_at: datetime
-    risk_profile: Optional[str] = None
-    recommendations: List[InvestmentRecommendation] = []
-    portfolio: List[UserPortfolio] = []
-    class Config:
-        orm_mode = True
-
-# --- Token Schema ---
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
+        from_attributes = True
