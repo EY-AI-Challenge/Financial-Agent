@@ -104,6 +104,38 @@ def generate_insights(df: pd.DataFrame, asset_name: str = "Unknown Asset"):
         "sma_50": sma_50
     }
 
+def chat_with_portfolio(user_message: str, portfolio_context: list) -> str:
+    """Answers a free-form question using live portfolio data as context."""
+    if not GEMINI_API_KEY:
+        return "Gemini API key not configured. Add GEMINI_API_KEY to your .env file."
+
+    lines = []
+    for a in portfolio_context:
+        sma20 = f"${a['sma_20']:.2f}" if a.get('sma_20') else "N/A"
+        sma50 = f"${a['sma_50']:.2f}" if a.get('sma_50') else "N/A"
+        lines.append(
+            f"- {a['asset']}: Price ${a['current_price']:.2f} | Signal {a['signal']} ({a['confidence']*100:.0f}%) | SMA20 {sma20} | SMA50 {sma50}"
+        )
+    context_str = "\n".join(lines)
+
+    prompt = f"""You are an elite AI financial advisor for the 'Financial Bros' investment fund.
+You have real-time access to the fund's full portfolio data shown below.
+Answer the user's question concisely, professionally, and in the same language the user used.
+
+CURRENT PORTFOLIO DATA:
+{context_str}
+
+USER QUESTION: {user_message}
+
+Reply in 2-4 sentences. Be specific with asset names and numbers. Do not use markdown."""
+
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        return f"Error generating response: {str(e)}"
+
+
 def calculate_portfolio_metrics(asset_data_dict):
     """
     Calculates overall metrics for the portfolio.

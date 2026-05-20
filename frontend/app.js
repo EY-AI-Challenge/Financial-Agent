@@ -21,11 +21,77 @@ function setupNavigation() {
         item.addEventListener('click', () => {
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
-            // Mock view switching for prototype
-            console.log(`Navigating to ${item.dataset.view}`);
+            const view = item.dataset.view;
+            document.querySelectorAll('.content-view').forEach(v => v.style.display = 'none');
+            const target = document.getElementById(`view-${view}`);
+            if (target) target.style.display = 'block';
         });
     });
 }
+
+// --- Chat ---
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send-btn');
+    const message = input.value.trim();
+    if (!message) return;
+
+    appendMessage(message, 'user');
+    input.value = '';
+    sendBtn.disabled = true;
+
+    const typingId = showTyping();
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        hideTyping(typingId);
+        appendMessage(data.response, 'agent');
+    } catch {
+        hideTyping(typingId);
+        appendMessage('Error connecting to the AI agent. Please try again.', 'agent');
+    } finally {
+        sendBtn.disabled = false;
+        input.focus();
+    }
+}
+
+function appendMessage(text, role) {
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `chat-message ${role}`;
+    div.innerHTML = `<div class="message-bubble">${text}</div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+    const container = document.getElementById('chat-messages');
+    const id = `typing-${Date.now()}`;
+    const div = document.createElement('div');
+    div.className = 'chat-message agent';
+    div.id = id;
+    div.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return id;
+}
+
+function hideTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && document.activeElement.id === 'chat-input') {
+        sendChatMessage();
+    }
+});
 
 async function loadPortfolioSummary() {
     try {

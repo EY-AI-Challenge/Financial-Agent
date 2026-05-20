@@ -101,6 +101,37 @@
                 </div>
             </div>
 
+            <!-- Portfolio View -->
+            <div class="content-view" id="view-portfolio" style="display:none;">
+                <div class="hero-header">
+                    <h1>Portfolio AI Agent</h1>
+                    <p>Ask anything about your portfolio in natural language.</p>
+                </div>
+
+                <div class="glass-card chat-container">
+                    <div class="card-header">
+                        <h2><i data-lucide="bot" style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:8px;"></i> AI Agent Chat</h2>
+                        <span class="chat-status">
+                            <div class="status-indicator online"></div>
+                            Online
+                        </span>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-message agent">
+                            <div class="message-bubble">
+                                Hello! I'm your AI financial advisor. Ask me anything about the portfolio — signals, risks, or recommendations.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" class="chat-input" placeholder="Ask about your portfolio... (e.g. Should I buy AAPL?)">
+                        <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMessage()">
+                            <i data-lucide="send" style="width:18px;height:18px;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 

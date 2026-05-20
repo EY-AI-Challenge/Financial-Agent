@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import pandas as pd
 import os
 import glob
-from ai_agent import generate_insights, calculate_portfolio_metrics
+from ai_agent import generate_insights, calculate_portfolio_metrics, chat_with_portfolio
 
 app = FastAPI(title="Financial Bros API", description="AI Decision Support Platform for Investment Funds")
 
@@ -96,6 +97,34 @@ def get_portfolio_summary():
         "metrics": metrics,
         "assets": asset_details
     }
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/api/chat")
+def chat_endpoint(request: ChatRequest):
+    files = glob.glob(os.path.join(DATA_DIR, "*.csv"))
+    assets = [os.path.basename(f).replace(".csv", "") for f in files]
+
+    portfolio_context = []
+    for asset in assets:
+        try:
+            df = load_asset_data(asset)
+            insights = generate_insights(df, asset)
+            portfolio_context.append({
+                "asset": asset,
+                "current_price": insights["current_price"],
+                "signal": insights["signal"],
+                "confidence": insights["confidence"],
+                "sma_20": insights.get("sma_20"),
+                "sma_50": insights.get("sma_50"),
+            })
+        except:
+            continue
+
+    response = chat_with_portfolio(request.message, portfolio_context)
+    return {"response": response}
+
 
 # Mount frontend
 if os.path.exists(FRONTEND_DIR):
