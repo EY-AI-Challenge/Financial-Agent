@@ -412,11 +412,12 @@ with tab_invest:
         score_delta = "Risk elevated"
 
     st.markdown("---")
-    met1, met2, met3, met4 = st.columns(4)
+    met1, met2, met3, met4, met5 = st.columns(5)
     met1.metric("Expected profile", invest_row["Trend Outlook"].upper(), invest_row["Projection Confidence"])
-    met2.metric("5Y Return", f"{invest_row['Return 5Y %']:.2f}%")
-    met3.metric("Volatility", f"{invest_row['Volatility %']:.2f}%", invest_row["Risk Level"])
-    met4.metric("Final Score", f"{score:.1f}/100", score_delta)
+    met2.metric("ROI (1Y)", f"{invest_row['Return 1Y %']:.2f}%")
+    met3.metric("5Y Return", f"{invest_row['Return 5Y %']:.2f}%")
+    met4.metric("Volatility", f"{invest_row['Volatility %']:.2f}%", invest_row["Risk Level"])
+    met5.metric("Final Score", f"{score:.1f}/100", score_delta)
 
     if execute_investment:
         estimated_units = new_capital / float(invest_row["Current Price"]) if float(invest_row["Current Price"]) else 0
