@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial Bros | Financial Agent AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css?v=5">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
@@ -101,10 +101,79 @@
                 </div>
             </div>
 
+
+
+            <!-- Portfolio View -->
+            <div class="content-view" id="view-portfolio" style="display: none;">
+                <div class="hero-header">
+                    <h1>My Portfolio</h1>
+                    <p>Manage your holdings and get AI-driven allocation insights.</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Add Asset Form -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h2>Add Asset</h2>
+                            <i data-lucide="plus-circle" class="accent-icon"></i>
+                        </div>
+                        <form id="add-asset-form" class="portfolio-form">
+                            <div class="form-group">
+                                <label for="portfolio-asset-select">Select Asset</label>
+                                <select id="portfolio-asset-select" class="glass-select" style="width: 100%; margin-top: 0.5rem; margin-bottom: 1rem;">
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="portfolio-qty">Quantity Owned</label>
+                                <input type="number" id="portfolio-qty" class="glass-input" step="any" min="0" placeholder="e.g. 1.5" required>
+                            </div>
+                            <button type="submit" class="action-btn" style="width: 100%; margin-top: 1rem;">Add to Portfolio</button>
+                        </form>
+                    </div>
+
+                    <!-- Portfolio Summary KPI -->
+                    <div class="glass-card ai-insights-container">
+                        <div class="card-header">
+                            <h2>Total Portfolio Value</h2>
+                            <i data-lucide="dollar-sign" class="accent-icon"></i>
+                        </div>
+                        <div class="insight-content" style="text-align: center; margin-top: 2rem;">
+                            <div class="insight-signal" style="font-size: 2.5rem; background: transparent; border: none; color: var(--accent-primary);" id="portfolio-total-value">
+                                $0.00
+                            </div>
+                            <p style="color: var(--text-secondary); margin-top: 1rem;">Based on real-time market data</p>
+                            <button id="btn-portfolio-insight" class="action-btn" style="margin-top: 2rem;">Generate AI Portfolio Insight</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Holdings Table -->
+                <div class="glass-card table-container mt-4">
+                    <div class="card-header">
+                        <h2>Current Holdings</h2>
+                    </div>
+                    <table class="assets-table">
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Quantity</th>
+                                <th>Current Price</th>
+                                <th>Total Value</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolio-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </main>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=2"></script>
     <script>
         lucide.createIcons();
     </script>

@@ -1,5 +1,7 @@
 const API_BASE_URL = 'http://localhost:8000/api';
 let mainChartInstance = null;
+let userPortfolio = JSON.parse(localStorage.getItem('financial_bros_portfolio')) || {};
+let currentPrices = {}; // Store real-time prices
 
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
@@ -10,9 +12,26 @@ async function initApp() {
     await loadPortfolioSummary();
     
     const assetSelector = document.getElementById('asset-selector');
-    assetSelector.addEventListener('change', (e) => {
-        loadAssetDetails(e.target.value);
+    if (assetSelector) {
+        assetSelector.addEventListener('change', (e) => {
+            loadAssetDetails(e.target.value);
+        });
+    }
+
+    // Setup Portfolio Form
+    document.getElementById('add-asset-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const asset = document.getElementById('portfolio-asset-select').value;
+        const qty = parseFloat(document.getElementById('portfolio-qty').value);
+        if (asset && qty > 0) {
+            userPortfolio[asset] = (userPortfolio[asset] || 0) + qty;
+            localStorage.setItem('financial_bros_portfolio', JSON.stringify(userPortfolio));
+            document.getElementById('portfolio-qty').value = '';
+            renderUserPortfolio();
+        }
     });
+
+    document.getElementById('btn-portfolio-insight').addEventListener('click', generatePortfolioInsight);
 }
 
 function setupNavigation() {
@@ -21,8 +40,20 @@ function setupNavigation() {
         item.addEventListener('click', () => {
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
-            // Mock view switching for prototype
-            console.log(`Navigating to ${item.dataset.view}`);
+            
+            const viewId = item.dataset.view;
+            if (viewId === 'dashboard') {
+                document.getElementById('view-dashboard').style.display = 'block';
+                document.getElementById('view-portfolio').style.display = 'none';
+            } else if (viewId === 'portfolio') {
+                document.getElementById('view-dashboard').style.display = 'none';
+                document.getElementById('view-portfolio').style.display = 'block';
+                renderUserPortfolio();
+            } else {
+                // Settings / AI Agent placeholders
+                alert("This module is locked in the prototype version.");
+                document.querySelector('[data-view="dashboard"]').click();
+            }
         });
     });
 }
@@ -35,18 +66,25 @@ async function loadPortfolioSummary() {
         renderKPIs(data.metrics);
         renderAssetsTable(data.assets);
         
-        // Populate selector
+        // Populate selectors and store prices
         const assetSelector = document.getElementById('asset-selector');
-        assetSelector.innerHTML = '';
+        const portfolioSelect = document.getElementById('portfolio-asset-select');
+        
+        if (assetSelector) assetSelector.innerHTML = '';
+        if (portfolioSelect) portfolioSelect.innerHTML = '';
+        
         data.assets.forEach(assetInfo => {
+            currentPrices[assetInfo.asset] = assetInfo.current_price;
+
             const option = document.createElement('option');
             option.value = assetInfo.asset;
             option.textContent = assetInfo.asset;
-            assetSelector.appendChild(option);
+            if (assetSelector) assetSelector.appendChild(option.cloneNode(true));
+            if (portfolioSelect) portfolioSelect.appendChild(option);
         });
         
         // Load first asset
-        if (data.assets.length > 0) {
+        if (data.assets.length > 0 && assetSelector) {
             loadAssetDetails(data.assets[0].asset);
         }
         
@@ -55,8 +93,81 @@ async function loadPortfolioSummary() {
     }
 }
 
+function renderUserPortfolio() {
+    const tbody = document.getElementById('portfolio-table-body');
+    tbody.innerHTML = '';
+    
+    let totalValue = 0;
+
+    for (const [asset, qty] of Object.entries(userPortfolio)) {
+        const price = currentPrices[asset] || 0;
+        const value = price * qty;
+        totalValue += value;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${asset}</strong></td>
+            <td>${qty.toFixed(4)}</td>
+            <td>$${price.toFixed(2)}</td>
+            <td>$${value.toFixed(2)}</td>
+            <td><button class="action-btn" style="border-color: var(--signal-sell); color: var(--signal-sell);" onclick="removeAsset('${asset}')">Remove</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    if (Object.keys(userPortfolio).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No assets in portfolio yet.</td></tr>';
+    }
+
+    document.getElementById('portfolio-total-value').innerText = `$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+}
+
+window.removeAsset = function(asset) {
+    delete userPortfolio[asset];
+    localStorage.setItem('financial_bros_portfolio', JSON.stringify(userPortfolio));
+    renderUserPortfolio();
+}
+
+async function generatePortfolioInsight() {
+    const btn = document.getElementById('btn-portfolio-insight');
+    const originalText = btn.innerText;
+    btn.innerText = "Analyzing...";
+    btn.disabled = true;
+
+    // Simulate AI insight generation delay or call backend if endpoint existed
+    setTimeout(() => {
+        let insight = "";
+        let total = 0;
+        let btcExposure = 0;
+        
+        for (const [asset, qty] of Object.entries(userPortfolio)) {
+            total += (currentPrices[asset] || 0) * qty;
+            if (asset === 'BTC-USD' || asset === 'ETH-USD') {
+                btcExposure += (currentPrices[asset] || 0) * qty;
+            }
+        }
+
+        if (total === 0) {
+            alert("Your portfolio is empty. Add assets first.");
+        } else {
+            const cryptoPercentage = (btcExposure / total) * 100;
+            if (cryptoPercentage > 50) {
+                alert(`⚠️ AI Warning: Your portfolio is highly exposed to crypto (${cryptoPercentage.toFixed(1)}%). Consider diversifying into stable assets like SPY.`);
+            } else if (cryptoPercentage === 0) {
+                alert(`📈 AI Suggestion: You have 0% exposure to digital assets. Consider adding a small allocation of BTC-USD to improve the Sharpe Ratio.`);
+            } else {
+                alert(`✅ AI Insight: Your portfolio is well-balanced with a ${cryptoPercentage.toFixed(1)}% crypto allocation. Hold steady and monitor SMA signals.`);
+            }
+        }
+
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }, 1500);
+}
+
 function renderKPIs(metrics) {
     const container = document.getElementById('kpi-container');
+    if(!container) return;
     container.innerHTML = `
         <div class="glass-card kpi-card">
             <div class="kpi-label">Total Assets Monitored</div>
@@ -78,6 +189,7 @@ function renderKPIs(metrics) {
 
 function renderAssetsTable(assets) {
     const tbody = document.getElementById('assets-table-body');
+    if(!tbody) return;
     tbody.innerHTML = '';
     
     assets.forEach(asset => {
@@ -87,7 +199,7 @@ function renderAssetsTable(assets) {
             <td>$${asset.current_price.toFixed(2)}</td>
             <td><span class="signal-badge ${asset.signal}">${asset.signal}</span></td>
             <td>${(asset.confidence * 100).toFixed(0)}%</td>
-            <td><button class="action-btn" onclick="loadAssetDetails('${asset.asset}')">Analyze</button></td>
+            <td><button class="action-btn" onclick="document.querySelector('[data-view=\\'dashboard\\']').click(); loadAssetDetails('${asset.asset}'); window.scrollTo(0,0);">Analyze</button></td>
         `;
         tbody.appendChild(tr);
     });
@@ -98,12 +210,10 @@ async function loadAssetDetails(assetName) {
     document.getElementById('ai-insight-content').innerHTML = '<div class="loading-spinner"></div>';
     
     try {
-        // Fetch chart data
         const chartRes = await fetch(`${API_BASE_URL}/assets/${assetName}/data?days=180`);
         const chartData = await chartRes.json();
         renderChart(chartData);
         
-        // Fetch AI insights
         const insightRes = await fetch(`${API_BASE_URL}/assets/${assetName}/insights`);
         const insightData = await insightRes.json();
         renderAIInsights(insightData.insights);
@@ -168,11 +278,6 @@ function renderChart(data) {
                     grid: { color: 'rgba(255, 255, 255, 0.05)' },
                     ticks: { color: '#94a3b8' }
                 }
-            },
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
             }
         }
     });
@@ -180,6 +285,7 @@ function renderChart(data) {
 
 function renderAIInsights(insights) {
     const container = document.getElementById('ai-insight-content');
+    if(!container) return;
     
     let signalClass = '';
     if (insights.signal === 'BUY') signalClass = 'signal-buy';
