@@ -190,7 +190,6 @@ def create_price_chart(df):
     
     fig = go.Figure()
     
-    # Adicionar preço de fechamento
     fig.add_trace(go.Candlestick(
         x=df_with_ma.index,
         open=df_with_ma['Open'],
