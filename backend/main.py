@@ -1,10 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from . import models, schemas, auth, database, data_router
+from . import models, schemas, auth, database, data_router, updater
+import asyncio
 
 models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="Financial Decision Support API")
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(updater.update_financial_data())
 
 app.include_router(data_router.router)
 

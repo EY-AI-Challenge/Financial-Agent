@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-900 text-white font-sans antialiased;
+  }
+}
+
+@layer components {
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-accent-blue hover:bg-blue-600 rounded-lg transition-colors font-medium;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-dark-700 hover:bg-dark-800 rounded-lg transition-colors font-medium border border-white/10;
+  }
+}
