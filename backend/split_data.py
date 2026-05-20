@@ -8,7 +8,7 @@ TEST_DIR = DATA_DIR / "test"
 
 TRAIN_START = pd.Timestamp("2025-05-20")
 TRAIN_END = pd.Timestamp("2026-03-15")
-TEST_START = pd.Timestamp("2026-03-16")
+TEST_START = pd.Timestamp("2026-03-15")
 TEST_END = pd.Timestamp("2026-05-19")
 
 
