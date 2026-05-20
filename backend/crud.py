@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
+import models, schemas
 
 # --- User Portfolio CRUD ---
 def get_portfolio_by_user(db: Session, user_id: int):

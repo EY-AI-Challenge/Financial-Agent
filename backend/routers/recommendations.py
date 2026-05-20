@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from .. import schemas, models, auth, crud, database
+import schemas, models, auth, crud, database
 
 router = APIRouter(
     prefix="/api/recommendations",
