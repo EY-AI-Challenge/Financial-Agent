@@ -149,8 +149,21 @@ class StockPredictor:
         # ---- Chronos (optional) ----------------------------------------
         if verbose:
             print("\n[4/4] Loading Chronos pre-trained foundation model…")
+        
+        # Auto-detect hardware accelerator
+        import torch
+        if torch.cuda.is_available():
+            target_device = "cuda"
+        elif torch.backends.mps.is_available():
+            target_device = "mps"
+        else:
+            target_device = "cpu"
+            
+        if verbose:
+            print(f"      Hardware accelerator detected: {target_device.upper()}")
+
         self.chronos = ChronosForecaster(model_size=self.chronos_size)
-        self.chronos.load(device="cpu", verbose=verbose)
+        self.chronos.load(device=target_device, verbose=verbose)
 
         self._trained = True
         elapsed = time.time() - t0

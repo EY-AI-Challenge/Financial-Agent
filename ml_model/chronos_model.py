@@ -141,7 +141,7 @@ class ChronosForecaster:
             # quantiles shape: (num_quantiles, batch, prediction_length)
             quantiles_levels = [0.1, 0.5, 0.9]
             forecast = self.pipeline.predict(
-                context=context_tensor,
+                context_tensor,                    # <-- Removed "context="
                 prediction_length=max_h,
                 num_samples=self.num_samples,
                 limit_prediction_length=False,
@@ -171,6 +171,7 @@ class ChronosForecaster:
             return results
 
         except Exception as exc:
-            warnings.warn(f"[Chronos] Inference failed: {exc}. "
-                          "Falling back to LightGBM + Prophet.")
+            # Change this from warnings.warn to a hard print statement
+            print(f"\n  [Chronos ERROR] Inference failed: {exc}")
+            print("  Falling back to LightGBM + Prophet.\n")
             return None
