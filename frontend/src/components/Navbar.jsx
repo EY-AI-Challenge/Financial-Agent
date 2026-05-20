@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Bell, User, Settings, Menu } from 'lucide-react'
+import { Bell, User, Settings } from 'lucide-react'
 
 function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)

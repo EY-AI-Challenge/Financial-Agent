@@ -82,7 +82,7 @@ function InvestmentSimulator() {
       <div className="glass-effect p-6 rounded-xl">
         <h2 className="text-xl font-bold text-white mb-4">Suggested Allocation</h2>
         <div className="space-y-3">
-          {selectedAssets.map((asset, idx) => (
+          {selectedAssets.map((asset) => (
             <div key={asset} className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-gray-400">{asset}</span>
