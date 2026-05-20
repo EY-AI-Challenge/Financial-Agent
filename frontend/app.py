@@ -139,6 +139,10 @@ def add_log(message: str) -> None:
 
 
 with st.sidebar:
+    st.image(
+        "https://github.com/EYAIChallenge/Overview/raw/main/EY_Logo_Beam_RGB_White_Yellow.png",
+        width=84,
+    )
     st.title("EY Portfolio Copilot")
     api_key = st.text_input("OpenAI API Key", type="password", help="Used by the chat agent.")
     if api_key:
@@ -160,7 +164,8 @@ with st.sidebar:
         index=0 if assets_df.empty else min(1, len(assets_df) - 1),
     )
 
-st.title("EY Sentinel — Investment Decision Support Platform")
+st.title("Vector Alpha — Investment Decision Support Platform")
+st.caption("AI-powered portfolio intelligence for opportunity discovery, risk mitigation, and model-based scenario projection.")
 
 if not payload or assets_df.empty:
     st.error("Backend payload not found. Run `python src/build_frontend_payload.py` first.")
@@ -178,8 +183,8 @@ col5.metric("Projection", selected_row["Trend Outlook"].upper(), f"{int(selected
 
 st.markdown("---")
 
-tab_overview, tab_asset, tab_risk, tab_chat, tab_logs = st.tabs(
-    ["Portfolio Overview", "Asset Drilldown", "Risk Map", "AI Copilot", "System Logs"]
+tab_overview, tab_asset, tab_risk, tab_chat, tab_invest, tab_logs = st.tabs(
+    ["Portfolio Overview", "Asset Drilldown", "Risk Map", "AI Copilot", "Invest Capital", "System Logs"]
 )
 
 with tab_overview:
@@ -369,6 +374,129 @@ with tab_chat:
 
     with st.expander("Backend context snapshot"):
         st.code(format_portfolio_analysis(), language="text")
+
+with tab_invest:
+    st.subheader("Capital Allocation Simulator")
+    st.caption("Use the real portfolio analytics to test how new capital could be deployed.")
+
+    col_inv1, col_inv2, col_inv3 = st.columns([1.4, 1.2, 1])
+    with col_inv1:
+        new_capital = st.number_input(
+            "New capital to invest ($)",
+            min_value=1000,
+            value=50000,
+            step=5000,
+            key="new_capital",
+        )
+    with col_inv2:
+        invest_asset = st.selectbox(
+            "Preferred asset",
+            assets_df["Ticker"].tolist(),
+            key="invest_asset",
+        )
+    with col_inv3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        execute_investment = st.button("Simulate Allocation", type="primary")
+
+    invest_row = assets_df.loc[assets_df["Ticker"] == invest_asset].iloc[0]
+
+    score = max(0, min(100, round(float(invest_row["Opportunity Score"]) - 0.35 * float(invest_row["Risk Score"]) + 25, 1)))
+    if score >= 75:
+        score_label = "Attractive"
+        score_delta = "Favorable setup"
+    elif score >= 55:
+        score_label = "Balanced"
+        score_delta = "Selective entry"
+    else:
+        score_label = "Cautious"
+        score_delta = "Risk elevated"
+
+    st.markdown("---")
+    met1, met2, met3, met4 = st.columns(4)
+    met1.metric("Expected profile", invest_row["Trend Outlook"].upper(), invest_row["Projection Confidence"])
+    met2.metric("5Y Return", f"{invest_row['Return 5Y %']:.2f}%")
+    met3.metric("Volatility", f"{invest_row['Volatility %']:.2f}%", invest_row["Risk Level"])
+    met4.metric("Final Score", f"{score:.1f}/100", score_delta)
+
+    if execute_investment:
+        estimated_units = new_capital / float(invest_row["Current Price"]) if float(invest_row["Current Price"]) else 0
+        st.success(
+            f"Simulation ready: allocating ${new_capital:,.0f} to {invest_asset} buys approximately {estimated_units:,.2f} units."
+        )
+        add_log(f"Investment simulation created for {invest_asset} with ${new_capital:,.0f}.")
+
+    left, right = st.columns([1, 1])
+    with left:
+        scenario_df = pd.DataFrame(
+            {
+                "Scenario": ["Low", "Mid", "High"],
+                "Projected Price": [
+                    invest_row["Projection Low"],
+                    invest_row["Projection Mid"],
+                    invest_row["Projection High"],
+                ],
+            }
+        )
+        fig = px.bar(
+            scenario_df,
+            x="Scenario",
+            y="Projected Price",
+            color="Scenario",
+            title=f"{invest_asset} scenario projection for capital deployment",
+        )
+        fig.update_layout(template="plotly_dark", height=340, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with right:
+        st.markdown("### Allocation view")
+        st.write(f"Recommended action: `{invest_row['Action']}`")
+        st.write(f"Confidence: `{invest_row['Confidence']}`")
+        st.write(f"Risk / Opportunity: `{invest_row['Risk Score']}` / `{invest_row['Opportunity Score']}`")
+        st.write(f"Scenario note: {invest_row['Scenario Note']}")
+        st.write(f"Key drivers: `{invest_row['Key Drivers']}`")
+
+    st.markdown("### Ask the copilot about this allocation")
+    if "invest_messages" not in st.session_state:
+        st.session_state.invest_messages = [
+            {
+                "role": "assistant",
+                "content": "Tell me how much capital you want to allocate and your objective, and I will reason using the real portfolio analytics.",
+            }
+        ]
+
+    invest_chat_container = st.container(height=260)
+    with invest_chat_container:
+        for message in st.session_state.invest_messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    if invest_prompt := st.chat_input(
+        "Example: Should I allocate the new capital to AAPL or BTC-USD given the current risk profile?",
+        key="invest_chat_input",
+    ):
+        st.session_state.invest_messages.append({"role": "user", "content": invest_prompt})
+        add_log(f"Investment copilot request: {invest_prompt[:60]}")
+        with invest_chat_container:
+            with st.chat_message("user"):
+                st.markdown(invest_prompt)
+            with st.chat_message("assistant"):
+                if not os.getenv("OPENAI_API_KEY"):
+                    st.error("Add your OpenAI API key in the sidebar to enable the copilot.")
+                else:
+                    try:
+                        enriched_prompt = (
+                            f"I have ${new_capital:,.0f} to invest and I am evaluating {invest_asset}. "
+                            f"Use the portfolio analytics and recommendation engine to advise me. "
+                            f"Original question: {invest_prompt}"
+                        )
+                        response = financial_agent.invoke(enriched_prompt)
+                        content = response["output"]
+                        st.markdown(content)
+                        st.session_state.invest_messages.append({"role": "assistant", "content": content})
+                        add_log("Investment copilot response delivered successfully.")
+                    except Exception as error:
+                        st.error(f"Agent error: {error}")
+                        add_log(f"Investment copilot error: {error}")
 
 with tab_logs:
     st.code("\n".join(st.session_state.system_logs), language="bash")
