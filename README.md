@@ -127,9 +127,12 @@ but the ability to **translate that technology into meaningful business advantag
 
 ```bash
 pip install -r requirements.txt
+pip install streamlit>=1.28.0
 python DataLoader.py
 streamlit run app.py
 ```
+
+`streamlit` is also listed in `requirements.txt`; the second line is optional if the full install already succeeded.
 
 Terminal-only chat: `python agent.py`
 

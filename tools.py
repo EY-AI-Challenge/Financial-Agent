@@ -108,10 +108,10 @@ def get_stock_summary(ticker: str) -> str:
 
     return (
         f"Stock: {t} (as of {as_of.date()})\n"
-        f"Close: ${close:.2f}\n"
+        f"Close: USD {close:.2f}\n"
         f"1-day return: {ret_1d:+.2f}% | 5-day return: {ret_5d:+.2f}%\n"
         f"RSI(14): {rsi:.1f} | MACD: {macd:.3f} (signal {macd_signal:.3f}, {macd_bias})\n"
-        f"MA20: ${ma_20:.2f} | MA50: ${ma_50:.2f} | Trend: {trend}\n"
+        f"MA20: USD {ma_20:.2f} | MA50: USD {ma_50:.2f} | Trend: {trend}\n"
         f"Volatility (20d): {vol:.4f}"
     )
 
@@ -144,7 +144,7 @@ def get_trading_signal(ticker: str) -> str:
     return (
         f"Signal for {t} (as of {as_of.date()}): {signal}\n"
         f"Reason: {reason}\n"
-        f"Close ${close:.2f} is {price_vs_ma} (${ma_20:.2f})\n"
+        f"Close: USD {close:.2f} | {price_vs_ma} | MA20: USD {ma_20:.2f}\n"
         f"Disclaimer: rule-based signal for decision support only, not guaranteed returns."
     )
 
@@ -167,7 +167,7 @@ def compare_stocks(tickers: str) -> str:
         rsi = float(row["rsi_14"])
         ret_5d = float(row["return_5d"]) * 100
         lines.append(
-            f"{t}: close=${close:.2f}, RSI={rsi:.1f}, 5d return={ret_5d:+.2f}% (as of {as_of.date()})"
+            f"{t}: close=USD {close:.2f}, RSI={rsi:.1f}, 5d return={ret_5d:+.2f}% (as of {as_of.date()})"
         )
 
     return "Comparison:\n" + "\n".join(lines)

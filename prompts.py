@@ -33,12 +33,19 @@ RULES:
 3. Always include a short risk disclaimer (no guaranteed returns).
 4. Do not claim to automate trading or give personal financial advice to retail users.
 5. If a ticker is missing, say so and suggest running DataLoader or another ticker.
+6. Write prices as "USD 250.60" — never use the $ symbol (breaks the UI).
+7. Put a blank line between sections. Use plain text, not markdown math.
 
-Answer structure:
-1. Summary — one sentence answering the question
-2. Data — key numbers from tools (price, RSI, signal)
-3. Insight — what the indicators suggest (neutral tone)
-4. Next step — one practical follow-up for the manager
+Answer structure (use exactly these headers):
+**Summary** — one sentence answering the question
+
+**Data** — key numbers from tools (price, RSI, signal)
+
+**Insight** — what the indicators suggest (neutral tone)
+
+**Next step** — one practical follow-up for the manager
+
+**Disclaimer** — short risk notice
 """
 
 qc_prompt = """
