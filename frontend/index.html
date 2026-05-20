@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Bros | AI Investment Command Center</title>
+    <meta name="description" content="AI-powered investment decision support platform for high-value asset portfolio management.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/styles.css?v=10">
+</head>
+<body>
+    <div class="glow-orb glow-1"></div>
+    <div class="glow-orb glow-2"></div>
+    <div class="glow-orb glow-3"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">
+                    <i data-lucide="trending-up"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">Financial</span>
+                    <span class="brand-sub">BROS</span>
+                </div>
+            </div>
+
+            <div class="ai-status" id="ai-status-badge">
+                <div class="status-dot offline"></div>
+                <span>AI Offline</span>
+            </div>
+
+            <ul class="nav-links">
+                <li class="active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li data-view="portfolio">
+                    <i data-lucide="pie-chart"></i>
+                    <span>Portfolio</span>
+                </li>
+                <li data-view="news">
+                    <i data-lucide="newspaper"></i>
+                    <span>Market News</span>
+                    <span class="nav-badge" id="news-badge">NEW</span>
+                </li>
+                <li data-view="chat">
+                    <i data-lucide="bot"></i>
+                    <span>AI Chat</span>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="fund-info">
+                    <i data-lucide="shield-check"></i>
+                    <div>
+                        <div class="fund-label">Fund Manager</div>
+                        <div class="fund-value">Active Session</div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <div class="page-title" id="page-title">Strategic Command Center</div>
+                    <div class="breadcrumb">Financial Bros · Real-time AI Analysis</div>
+                </div>
+                <div class="topbar-right">
+                    <div class="search-bar">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="search-input" placeholder="Search asset...">
+                    </div>
+                    <div class="topbar-time" id="topbar-time"></div>
+                </div>
+            </header>
+
+            <!-- ===== DASHBOARD VIEW ===== -->
+            <div class="content-view" id="view-dashboard">
+                <div class="kpi-grid" id="kpi-container">
+                    <div class="kpi-card glass-card loading-skeleton"></div>
+                    <div class="kpi-card glass-card loading-skeleton"></div>
+                    <div class="kpi-card glass-card loading-skeleton"></div>
+                    <div class="kpi-card glass-card loading-skeleton"></div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="glass-card chart-card">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">Asset Performance</h2>
+                                <p class="card-sub">Price + SMA overlay (180 days)</p>
+                            </div>
+                            <select id="asset-selector" class="glass-select"></select>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-card insight-card">
+                        <div class="card-header">
+                            <div>
+                                <h2 class="card-title">AI Recommendation</h2>
+                                <p class="card-sub">Local LLM · llama3</p>
+                            </div>
+                            <i data-lucide="zap" class="accent-icon"></i>
+                        </div>
+                        <div id="ai-insight-content" class="insight-content">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card table-card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Portfolio Overview</h2>
+                            <p class="card-sub">All monitored assets · SMA signals</p>
+                        </div>
+                        <div class="table-filters">
+                            <button class="filter-btn active" data-filter="ALL">All</button>
+                            <button class="filter-btn" data-filter="BUY">Buy</button>
+                            <button class="filter-btn" data-filter="SELL">Sell</button>
+                            <button class="filter-btn" data-filter="HOLD">Hold</button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="assets-table">
+                            <thead>
+                                <tr>
+                                    <th>Asset</th>
+                                    <th>Current Price</th>
+                                    <th>AI Signal</th>
+                                    <th>Confidence</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assets-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PORTFOLIO VIEW ===== -->
+            <div class="content-view hidden" id="view-portfolio">
+                <div class="view-header">
+                    <h1>My Portfolio</h1>
+                    <p>Track your holdings and get AI-driven allocation insights.</p>
+                </div>
+
+                <div class="portfolio-grid">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h2 class="card-title">Add Holding</h2>
+                            <i data-lucide="plus-circle" class="accent-icon"></i>
+                        </div>
+                        <form id="add-asset-form" class="portfolio-form">
+                            <label>Select Asset</label>
+                            <select id="portfolio-asset-select" class="glass-select full-width"></select>
+                            <label style="margin-top:1rem;">Quantity Owned</label>
+                            <input type="number" id="portfolio-qty" class="glass-input" step="any" min="0" placeholder="e.g. 2.5" required>
+                            <button type="submit" class="btn-primary full-width" style="margin-top:1.25rem;">
+                                <i data-lucide="plus"></i> Add to Portfolio
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h2 class="card-title">Total Value</h2>
+                            <i data-lucide="dollar-sign" class="accent-icon"></i>
+                        </div>
+                        <div class="portfolio-value-display">
+                            <div class="big-value" id="portfolio-total-value">$0.00</div>
+                            <p class="value-sub">Based on latest market prices</p>
+                            <button id="btn-portfolio-insight" class="btn-primary" style="margin-top:1.5rem; width:100%;">
+                                <i data-lucide="brain-circuit"></i> Generate AI Insight
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card table-card">
+                    <div class="card-header">
+                        <h2 class="card-title">Current Holdings</h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="assets-table">
+                            <thead>
+                                <tr>
+                                    <th>Asset</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total Value</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolio-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== NEWS VIEW ===== -->
+            <div class="content-view hidden" id="view-news">
+                <div class="view-header">
+                    <h1>Market News</h1>
+                    <p>Real-time financial headlines that may impact your portfolio.</p>
+                </div>
+
+                <div class="news-filters">
+                    <button class="news-tag active" data-q="stocks finance market">📈 General</button>
+                    <button class="news-tag" data-q="bitcoin ethereum crypto">₿ Crypto</button>
+                    <button class="news-tag" data-q="AAPL MSFT AMZN GOOGL tech stocks">💻 Tech</button>
+                    <button class="news-tag" data-q="federal reserve inflation interest rates">🏦 Fed & Rates</button>
+                    <button class="news-tag" data-q="SPY ETF index fund">📊 ETF & Index</button>
+                </div>
+
+                <div id="news-grid" class="news-grid">
+                    <div class="news-loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading market news...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== CHAT VIEW ===== -->
+            <div class="content-view hidden" id="view-chat">
+                <div class="view-header">
+                    <h1>AI Chat</h1>
+                    <p>Ask anything about the portfolio — powered by local LLM (llama3).</p>
+                </div>
+
+                <div class="glass-card chat-container">
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="chat-msg assistant">
+                            <div class="chat-avatar"><i data-lucide="bot"></i></div>
+                            <div class="chat-bubble">
+                                Hello! I'm your Financial Bros AI advisor running on <strong>llama3</strong> locally. Ask me anything about the portfolio, market signals, or investment strategy.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" class="glass-input" placeholder="Ask about the portfolio... e.g. Which asset should I buy today?">
+                        <button id="chat-send" class="btn-primary">
+                            <i data-lucide="send"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="/static/app.js?v=10"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
