@@ -1,0 +1,195 @@
+import yfinance as yf
+import pandas as pd
+import os
+import ta
+from datetime import datetime, timedelta
+
+
+def download_financial_data(
+    stocks: list[str] | None = None,
+    crypto: list[str] | None = None
+):
+    if stocks is None:
+        stocks = ['AMZN', 'AAPL', 'GOOGL', 'MSFT', 'UDMY', 'NXE', 'SPY', 'CDR.WA', 'EH']
+
+    if crypto is None:
+        crypto = ['BTC-USD', 'ETH-USD']
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+        print(f"Diretório '{data_dir}' criado.")
+
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=5 * 365)
+
+    # Download dos dados
+    all_tickers = stocks + crypto
+
+    for ticker in all_tickers:
+        try:
+
+            # Download dos dados
+            data = yf.download(ticker, start=start_date, end=end_date, progress=False)
+
+            if data.empty or len(data) < 3:
+                continue
+
+            # =========================
+            # converter para posição segura
+            # =========================
+            data = data.reset_index()
+
+            # =========================
+            # 🔧 1. trocar 1ª entrada pela 3ª (1ª coluna de preço)
+            # =========================
+            first_price_col = data.columns[1]  # depois do Date
+
+            data.loc[0, first_price_col] = data.loc[2, first_price_col]
+
+            # =========================
+            # 🗑 2. remover 2ª linha
+            # =========================
+            data = data.drop(index=1).reset_index(drop=True)
+            filename = os.path.join(data_dir, f"{ticker.replace('-', '_')}.csv")
+            data.to_csv(filename)
+
+            print(f"🛠 {ticker}: {len(data)} registros salvos em {filename}")
+
+        except Exception as e:
+            print(f"❌ Erro ao baixar {ticker}: {str(e)}")
+
+    # Mostrar resumo dos arquivos criados
+    if os.path.exists(data_dir):
+        csv_files = [f for f in os.listdir(data_dir) if f.endswith('.csv')]
+        for file in sorted(csv_files):
+            file_path = os.path.join(data_dir, file)
+
+
+def create_combined_dataset():
+    data_dir = 'data'
+    combined_file = os.path.join(data_dir, 'combined_financial_data.csv')
+
+    if not os.path.exists(data_dir):
+        return
+
+    all_data = {}
+
+    csv_files = [
+        f for f in os.listdir(data_dir)
+        if f.endswith('.csv') and f != 'combined_financial_data.csv'
+    ]
+
+    for file in csv_files:
+        ticker = file.replace('.csv', '').replace('_', '-')
+        file_path = os.path.join(data_dir, file)
+
+        try:
+            df = pd.read_csv(file_path, index_col='Date', parse_dates=True)
+
+            # 🔥 agora podes escolher o que queres
+            all_data[ticker] = df['Close']
+
+        except Exception as e:
+            print(f"Erro ao ler {file}: {str(e)}")
+
+    if all_data:
+        combined_df = pd.DataFrame(all_data)
+        combined_df.to_csv(combined_file)
+
+        print("✅ Dataset combinado criado")
+    return df
+if __name__ == "__main__":
+    # Download dos dados individuais
+    download_financial_data()
+
+    # Criar dataset combinado
+    create_combined_dataset()
+
+def create_features(df):
+        df = df.copy()
+
+        # returns
+        df["return"] = df["Close"].pct_change()
+
+        # target regressão (preço futuro)
+        df["target_price"] = df["Close"].shift(-1)
+
+        # target classificação (direção)
+        df["target_dir"] = (df["Close"].shift(-1) > df["Close"]).astype(int)
+
+        return df
+def prepare_ml_data(df):
+    df = create_features(df)
+
+    df = df.dropna()
+
+    features = [
+        "Open", "High", "Low", "Close",
+        "RSI", "MACD", "MACD_SIGNAL", "MACD_HIST",
+        "return"
+    ]
+
+    X = df[features]
+
+    y_price = df["target_price"]   # regressão
+    y_dir = df["target_dir"]       # classificação
+
+    return X, y_price, y_dir
+def time_split(X, y, train_ratio=0.8):
+    split = int(len(X) * train_ratio)
+
+    X_train, X_test = X.iloc[:split], X.iloc[split:]
+    y_train, y_test = y.iloc[:split], y.iloc[split:]
+
+    return X_train, X_test, y_train, y_test
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
+
+def train_price_model(X_train, y_train, X_test, y_test):
+
+    model = RandomForestRegressor(n_estimators=200, random_state=42)
+    model.fit(X_train, y_train)
+
+    preds = model.predict(X_test)
+
+    print("MAE:", mean_absolute_error(y_test, preds))
+
+    return model
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
+
+def train_price_model(X_train, y_train, X_test, y_test):
+
+    model = RandomForestRegressor(n_estimators=200, random_state=42)
+    model.fit(X_train, y_train)
+
+    preds = model.predict(X_test)
+
+    print("MAE:", mean_absolute_error(y_test, preds))
+
+    return model
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+def train_direction_model(X_train, y_train, X_test, y_test):
+
+    model = RandomForestClassifier(n_estimators=200, random_state=42)
+    model.fit(X_train, y_train)
+
+    preds = model.predict(X_test)
+
+    print("Accuracy:", accuracy_score(y_test, preds))
+
+    return model
+df = pd.read_csv("data/AAPL.csv", index_col="Date", parse_dates=True)
+
+X, y_price, y_dir = prepare_ml_data(df)
+
+# split
+X_train, X_test, y_price_train, y_price_test = time_split(X, y_price)
+_, _, y_dir_train, y_dir_test = time_split(X, y_dir)
+
+# modelos
+price_model = train_price_model(X_train, y_price_train, X_test, y_price_test)
+
+dir_model = train_direction_model(X_train, y_dir_train, X_test, y_dir_test)
