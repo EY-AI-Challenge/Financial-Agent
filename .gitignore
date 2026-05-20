@@ -1,0 +1,27 @@
+# Python bytecode (generated at import time)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Secrets
+.env
+
+# Market CSVs — regenerate with: python DataLoader.py
+data/
+
+# Trained ML model — regenerate with: python decision_engine.py
+models/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
