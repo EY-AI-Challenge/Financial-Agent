@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Bros | Financial Agent AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <div class="glow-bg-2"></div>
+    
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="brand">
+                <i data-lucide="cpu" class="brand-icon"></i>
+                <span>FINANCIAL BROS</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-view="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</li>
+                <li data-view="portfolio"><i data-lucide="pie-chart"></i> Portfolio</li>
+                <li data-view="agent"><i data-lucide="bot"></i> AI Agent</li>
+                <li data-view="settings"><i data-lucide="settings"></i> Settings</li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="search-bar">
+                    <i data-lucide="search"></i>
+                    <input type="text" placeholder="Search asset (e.g. AAPL, BTC-USD)...">
+                </div>
+                <div class="user-profile">
+                    <div class="status-indicator online"></div>
+                    <span>Fund Manager</span>
+                    <i data-lucide="user-circle"></i>
+                </div>
+            </header>
+
+            <div class="content-view" id="view-dashboard">
+                <div class="hero-header">
+                    <h1>Strategic Command Center</h1>
+                    <p>Real-time AI-driven insights for high-value asset portfolio.</p>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid" id="kpi-container">
+                    <div class="glass-card kpi-card loading-skeleton"></div>
+                    <div class="glass-card kpi-card loading-skeleton"></div>
+                    <div class="glass-card kpi-card loading-skeleton"></div>
+                </div>
+
+                <!-- Main Chart and Asset Selector -->
+                <div class="dashboard-grid">
+                    <div class="glass-card chart-container">
+                        <div class="card-header">
+                            <h2>Asset Performance</h2>
+                            <select id="asset-selector" class="glass-select">
+                                <option>Loading...</option>
+                            </select>
+                        </div>
+                        <canvas id="mainChart"></canvas>
+                    </div>
+
+                    <div class="glass-card ai-insights-container">
+                        <div class="card-header">
+                            <h2>AI Agent Recommendation</h2>
+                            <i data-lucide="zap" class="accent-icon"></i>
+                        </div>
+                        <div id="ai-insight-content" class="insight-content">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assets Table -->
+                <div class="glass-card table-container mt-4">
+                    <div class="card-header">
+                        <h2>Portfolio Assets Overview</h2>
+                    </div>
+                    <table class="assets-table">
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Current Price</th>
+                                <th>AI Signal</th>
+                                <th>Confidence</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assets-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
