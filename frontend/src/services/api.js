@@ -39,6 +39,13 @@ export const predictions = {
     apiClient.post('/predict/portfolio', portfolio),
 }
 
+export const portfolio = {
+  getCurrentPortfolio: () =>
+    apiClient.get('/portfolio/'),
+  addTransaction: (transaction) =>
+    apiClient.post('/portfolio/', transaction),
+}
+
 export const advisor = {
   getRecommendations: (portfolio) =>
     apiClient.post('/advisor/recommendation', portfolio),

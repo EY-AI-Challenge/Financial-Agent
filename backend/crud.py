@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
+import models, schemas
 
 # --- Portfolio CRUD ---
 def get_portfolio(db: Session):
