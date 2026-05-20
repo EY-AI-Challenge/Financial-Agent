@@ -61,7 +61,7 @@ def get_asset_data(asset: str, days: int = 365):
 @app.get("/api/assets/{asset}/insights")
 def get_asset_insights(asset: str):
     df = load_asset_data(asset)
-    insights = generate_insights(df)
+    insights = generate_insights(df, asset)
     return {
         "asset": asset,
         "insights": insights
@@ -84,7 +84,7 @@ def get_portfolio_summary():
     
     asset_details = []
     for asset, df in asset_data_dict.items():
-        insights = generate_insights(df)
+        insights = generate_insights(df, asset)
         asset_details.append({
             "asset": asset,
             "signal": insights["signal"],
