@@ -1,48 +1,15 @@
-# Multi-stage Dockerfile for Financial Frontend
-
-# Development & Build stage
-FROM node:20-alpine AS dev
-
+# Stage 1: Build the React application
+FROM node:18-alpine as build
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy source code
-COPY . .
-
-# Expose dev server port
-EXPOSE 3000
-
-# Default command runs dev server (can be overridden for build)
-CMD ["npm", "run", "dev"]
-
-# Production build stage
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
+COPY package.json ./
+RUN npm install
+COPY . ./
 RUN npm run build
 
-# Production stage - lightweight image
-FROM node:20-alpine AS prod
-
-WORKDIR /app
-
-# Install serve for static file serving
-RUN npm install -g serve
-
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
-
-EXPOSE 3000
-
-# Serve the built app
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Stage 2: Serve the application from a lightweight web server
+FROM nginx:1.23-alpine
+COPY --from=build /app/build /usr/share/nginx/html
+# Copy the nginx config to handle client-side routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
