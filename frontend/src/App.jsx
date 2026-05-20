@@ -9,11 +9,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/assets/:ticker" element={<AssetDetails />} />
-          <Route path="/simulator" element={<InvestmentSimulator />} />
-          <Route path="/advisor" element={<SmartAdvisor />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="assets/:ticker" element={<AssetDetails />} />
+          <Route path="simulator" element={<InvestmentSimulator />} />
+          <Route path="advisor" element={<SmartAdvisor />} />
         </Route>
       </Routes>
     </Router>
