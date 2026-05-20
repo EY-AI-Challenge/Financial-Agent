@@ -1,320 +1,193 @@
-# 💰 Financial Decision Support Platform
+# Financial Decision Support Platform
 
-An AI-powered investment platform built for the **EY AI Challenge** hackathon. Built with React, FastAPI, PostgreSQL, and ML models for intelligent financial recommendations.
+An AI-powered investment platform prototype created for the EY AI Challenge. The project combines a React + Vite frontend, a FastAPI backend, PostgreSQL for persistence, and ML-ready hooks for price prediction and portfolio recommendations.
 
-## 🚀 Quick Start (Docker - Recommended)
-
-### Prerequisites
-- Docker & Docker Compose installed
-- ~2GB free disk space
-- 4+ GB RAM
-
-### Start the Platform
-
-```bash
-docker-compose up
-```
-
-Done! Services will be available at:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Database**: localhost:5432
+This repository is intended as a hackathon prototype: readable, Docker-first, and easy for teammates to start with one command.
 
 ---
 
-## 📋 Project Structure
+## Quick Overview
 
-```
-Financial-Agent/
-├── frontend/                    # React + Vite + Tailwind
-│   ├── src/
-│   │   ├── pages/              # 4 main pages
-│   │   ├── components/         # Reusable UI components
-│   │   ├── services/           # API client
-│   │   └── App.jsx
-│   ├── Dockerfile              # Multi-stage: dev + prod
-│   └── package.json
-│
-├── backend/                    # FastAPI + SQLAlchemy
-│   ├── main.py                 # API routes
-│   ├── requirements.txt        # Python dependencies
-│   └── Dockerfile
-│
-├── financial_data/             # Historical CSV data
-│   ├── AAPL.csv
-│   ├── GOOGL.csv
-│   └── ... (11 tickers)
-│
-├── docker-compose.yml          # Production config
-├── docker-compose.dev.yml      # Development config
-├── startup.bat                 # Windows quick start
-├── startup.sh                  # Linux/macOS quick start
-├── DOCKER.md                   # Full Docker guide
-└── README.md                   # This file
-```
+- Frontend: React 18 + Vite, Tailwind CSS, Recharts for charts.
+- Backend: FastAPI, SQLAlchemy, PostgreSQL. Background updater fetches historical data (yfinance).
+- Orchestration: Docker Compose (frontend served by nginx, backend using Uvicorn).
 
 ---
 
-## 🏗️ Architecture
+## Quickstart (Docker - Recommended)
 
-### Frontend (React 18 + Vite)
-- **Routing**: React Router v6 (4 main pages)
-- **Styling**: Tailwind CSS with dark theme & glassmorphism
-- **State**: Context API + Axios
-- **Features**: Responsive, real-time updates, interactive charts
-
-### Backend (FastAPI)
-- **Framework**: FastAPI with async/await
-- **Authentication**: JWT-based with refresh tokens
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **API Docs**: Auto-generated Swagger/OpenAPI at `/docs`
-
-### Database (PostgreSQL)
-- **User Accounts**: Registration & authentication
-- **Market Data**: Historical prices for 11 tickers
-- **Predictions**: ML model outputs (1-week, 1-month, 1-year)
-- **Portfolios**: User investment simulations
-
-### ML Model (TBD)
-- **Algorithm**: XGBoost or LSTM (decision pending)
-- **Task**: Time-series forecasting for financial prices
-- **Predictions**: 3 horizons per ticker
-
----
-
-## 📊 Core Features
-
-### 1. **Dashboard**
-- Portfolio overview with total value
-- 24-hour gains/losses
-- Market insights (S&P 500, Bitcoin, Tech sector)
-- AI recommendations preview
-
-### 2. **Asset Details** (`/assets/:ticker`)
-- Historical price chart
-- 52-week high/low
-- 1-week, 1-month, 1-year price predictions
-- Interactive data visualization
-
-### 3. **Investment Simulator**
-- Configure initial investment amount
-- Select time horizon (1-7 days, 1-30 days, 1 year)
-- Choose assets to simulate
-- View projected returns
-- Portfolio allocation suggestions
-
-### 4. **Smart Advisor**
-- Risk tolerance selector (Low/Medium/High)
-- AI-powered recommendations (Buy/Sell/Hold)
-- Confidence scores for each recommendation
-- Portfolio health metrics (diversification, risk score, expected return)
-
----
-
-## 📡 API Endpoints
-
-### Authentication
-```
-POST   /api/auth/register       # Create new user account
-POST   /api/auth/login          # Get JWT token
-POST   /api/auth/refresh        # Refresh access token
-```
-
-### Data Management
-```
-GET    /api/data/tickers        # List all available tickers
-GET    /api/data/history/{ticker}  # Historical price data
-POST   /api/data/ingest         # Import CSV data to database
-```
-
-### Predictions
-```
-GET    /api/predict/{ticker}    # 1-week, 1-month, 1-year predictions
-POST   /api/predict/portfolio   # Multi-asset predictions
-```
-
-### Smart Advisor
-```
-POST   /api/advisor/recommendation  # Get AI recommendations
-POST   /api/advisor/risk-assessment # Portfolio risk analysis
-```
-
-Full API documentation available at `http://localhost:8000/docs` (Swagger UI)
-
----
-
-## 📦 Tech Stack
-
-### Frontend
-- React 18
-- Vite (fast build tool)
-- React Router v6
-- Tailwind CSS
-- Recharts (charting)
-- Axios (HTTP client)
-- Lucide React (icons)
-
-### Backend
-- Python 3.11+
-- FastAPI (async web framework)
-- SQLAlchemy (ORM)
-- Pydantic (validation)
-- PostgreSQL 15
-- yfinance (financial data)
-- XGBoost or LSTM (ML model)
-
-### DevOps
+Prerequisites:
 - Docker & Docker Compose
-- Multi-stage builds (production-optimized)
-- Health checks & networking
+- ~2 GB free disk (more recommended for datasets)
 
----
+Start everything:
 
-## 🔐 Security
-
-- **JWT Authentication**: Access + refresh tokens
-- **Password Hashing**: bcrypt with salt
-- **Database**: Encrypted passwords, secure credentials
-- **CORS**: Configured for cross-origin requests
-- **Environment Variables**: Sensitive data in `.env`
-
----
-
-## 🎯 Supported Tickers
-
-The platform includes historical data and supports predictions for:
-
-- **Stocks**: AAPL, GOOGL, MSFT, AMZN, UDMY, NXE, SPY, CDR.WA, EH
-- **Crypto**: BTC-USD, ETH-USD
-
----
-
-## 🛠️ Development
-
-### Without Docker (Local Setup)
-
-**Backend:**
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload
+```powershell
+docker compose up --build -d
 ```
 
-**Frontend:**
-```bash
+Then open:
+- Frontend: http://localhost/ or http://localhost:80
+- Backend API: http://localhost:8000
+- API docs (Swagger): http://localhost:8000/docs
+
+Notes:
+- In local development, the frontend can run with Vite HMR on port 3000.
+- In Docker, frontend is built with Vite and served by nginx on port 80.
+
+---
+
+## Project Structure (Short)
+
+```text
+Financial-Agent/
+├─ backend/                # FastAPI app, models, routers, updater
+├─ frontend/               # React + Vite app (Tailwind, Recharts)
+├─ financial_data/         # CSVs used by backend for historical data
+├─ docker-compose.yml      # Compose orchestration (db, backend, frontend)
+└─ README.md               # This file
+```
+
+---
+
+## Development Workflow
+
+Backend (local, without Docker):
+
+```powershell
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Frontend (local, Vite HMR):
+
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-### With Docker (Recommended)
-```bash
-# Development mode with hot reload
-./startup.sh dev
+Docker build commands:
 
-# Or production mode
-./startup.sh
+```powershell
+docker compose build frontend
+docker compose build backend
+docker compose up -d
+```
+
+If frontend dependencies changed:
+
+```powershell
+docker compose build --no-cache frontend
 ```
 
 ---
 
-## 📚 Documentation
+## API (Selected Endpoints)
 
-- [DOCKER.md](DOCKER.md) - Complete Docker guide, commands, troubleshooting
-- [frontend/README.md](frontend/README.md) - Frontend architecture & components
-- [API Endpoints](#-api-endpoints) - Full endpoint reference
-- [Architecture](#-architecture) - System design overview
+Authentication:
 
----
-
-## 📝 Development Log
-
-- **2026-05-20**: Initial project structure, React frontend setup, Docker configuration
-
-See [history.md](history.md) for detailed development history.
-
----
-
-## 🚀 Deployment
-
-### Production Build
-```bash
-# Build images
-docker-compose build
-
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
+```text
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/refresh
 ```
 
-### Stop Services
-```bash
-docker-compose down
+Data:
+
+```text
+GET  /api/data/tickers
+GET  /api/data/history/{ticker}
 ```
 
-### Clean Up (Remove volumes)
-```bash
-docker-compose down -v
+Portfolio:
+
+```text
+GET  /api/portfolio/
+POST /api/portfolio/
+```
+
+Recommendations:
+
+```text
+GET  /api/recommendations/
+POST /api/recommendations/{id}/accept
+```
+
+Full docs: http://localhost:8000/docs
+
+---
+
+## Troubleshooting
+
+Build stuck at `npm install` or failing in `vite build`:
+
+- Ensure `frontend/package.json` includes dev dependencies: `vite`, `@vitejs/plugin-react`, `tailwindcss`, `postcss`, `autoprefixer`.
+- Ensure Node 20+ for local frontend build.
+- Run with plain output:
+
+```powershell
+$env:DOCKER_BUILDKIT=0; docker compose --progress=plain build frontend
+```
+
+Vite ESM plugin error (`@vitejs/plugin-react` ESM only):
+
+- Keep `vite.config.mjs` (ESM).
+- Keep `"type": "module"` in `frontend/package.json`.
+
+Frontend shows briefly then blank (e.g., Dashboard):
+
+- Check browser DevTools Console for runtime errors.
+- Check container logs:
+
+```powershell
+docker compose logs --tail=100 frontend
+docker compose logs --tail=100 backend
+```
+
+- Check for duplicate route files with wrong extension (`.js` with JSX) and rename/remove.
+
+---
+
+## Helpful Commands
+
+Stop everything:
+
+```powershell
+docker compose down
+```
+
+Stop + remove volumes:
+
+```powershell
+docker compose down -v
+```
+
+Follow logs:
+
+```powershell
+docker compose logs -f
 ```
 
 ---
 
-## 🐛 Troubleshooting
+## Development Notes
 
-### Port Already in Use
-```bash
-# Find process using port 3000
-lsof -i :3000
-
-# Kill the process
-kill -9 <PID>
-```
-
-### Docker Issues
-See [DOCKER.md](DOCKER.md) for detailed troubleshooting guide.
-
-### Frontend Not Updating
-```bash
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up
-```
+- Backend starts an async updater to refresh financial CSV data.
+- Frontend sends JWT token from localStorage in `Authorization` header.
+- Asset Details consumes `/api/data/history/{ticker}` and renders a Recharts line chart.
 
 ---
 
-## 📄 API Endpoints Reference
+## Contributors
 
-### Authentication
-- `POST /api/auth/register`: Register a new user.
-- `POST /api/auth/login`: Authenticate and return JWT token.
-- `POST /api/auth/refresh`: Refresh access token.
-
-### Data & Insights
-- `GET /api/data/tickers`: Get list of available tickers.
-- `GET /api/data/history/{ticker}`: Get historical data for a specific ticker.
-- `POST /api/data/ingest`: Ingest CSV data into database.
-
-### Predictions
-- `GET /api/predict/{ticker}`: Get price predictions (1w, 1m, 1y) for a ticker.
-- `POST /api/predict/portfolio`: Get predictions for entire portfolio.
-
-### Smart Advisor
-- `POST /api/advisor/recommendation`: Get AI-powered investment recommendations.
-- `POST /api/advisor/risk-assessment`: Analyze portfolio risk.
+EY AI Challenge 2026 Hackathon
 
 ---
 
-## 👥 Contributors
-
-Built during the **EY AI Challenge 2026** Hackathon
-
----
-
-## 📄 License
+## License
 
 MIT
