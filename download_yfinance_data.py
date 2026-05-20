@@ -33,21 +33,10 @@ def download_financial_data(
             if data.empty or len(data) < 3:
                 continue
 
-            # =========================
-            # converter para posição segura
-            # =========================
+            #Organizar os dados
             data = data.reset_index()
-
-            # =========================
-            # 🔧 1. trocar 1ª entrada pela 3ª (1ª coluna de preço)
-            # =========================
             first_price_col = data.columns[1]  # depois do Date
-
             data.loc[0, first_price_col] = data.loc[2, first_price_col]
-
-            # =========================
-            # 🗑 2. remover 2ª linha
-            # =========================
             data = data.drop(index=1).reset_index(drop=True)
             filename = os.path.join(data_dir, f"{ticker.replace('-', '_')}.csv")
             data.to_csv(filename)
