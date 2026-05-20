@@ -25,8 +25,14 @@
 source venv/bin/activate
 
 # Install dependencies
-pip install yfinance fastapi uvicorn pandas numpy scikit-learn
+pip install -r requirements.txt
 ```
+
+### 1.1 Local AI & API Setup
+This project runs entirely locally and free of charge using **Ollama** for AI insights and a fallback mechanism for news.
+1. Download and install [Ollama](https://ollama.com).
+2. Start Ollama and run `ollama run llama3` to download the model.
+3. Configure the `.env` file (copy from `.env.example`). No paid API keys are strictly required.
 
 ### 2. Fetch the Data
 The platform requires historical financial data. Run the data loader script to fetch the `.csv` files using the `yfinance` library:
