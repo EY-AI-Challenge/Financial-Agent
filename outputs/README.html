@@ -1,0 +1,223 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Financial Agent README</title><style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 48px; line-height: 1.55; color: #111; }
+h1, h2, h3 { color: #111; margin-top: 1.4em; }
+code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+pre { background: #f3f4f6; padding: 14px; border-radius: 8px; overflow-x: auto; }
+blockquote { border-left: 4px solid #facc15; margin-left: 0; padding-left: 16px; color: #444; }
+ul, ol { padding-left: 22px; }
+img { max-width: 100%; }
+hr { border: none; border-top: 1px solid #ddd; margin: 28px 0; }
+</style></head><body><h1>Financial Agent</h1>
+<p>Decision-support platform for an investment fund managing a mixed portfolio of equities and cryptocurrencies.</p>
+<p>The goal of this project is to turn raw market data into <strong>actionable portfolio intelligence</strong>. Instead of only showing price charts, the system highlights:</p>
+<ul>
+<li>how each asset performed</li>
+<li>how risky it has been</li>
+<li>how much it tends to move with the market</li>
+<li>what action may make sense next</li>
+</ul>
+<h2>What We Built</h2>
+<p>The project is structured around three decision layers:</p>
+<h3>1. Portfolio Intelligence</h3>
+<p>For each asset, we calculate:</p>
+<ul>
+<li><code>Total Return</code> over <code>30D</code>, <code>1Y</code>, and <code>5Y</code></li>
+<li><code>Annualized Volatility</code></li>
+<li><code>Max Drawdown</code></li>
+<li><code>Sharpe Ratio</code></li>
+<li><code>Correlation with SPY</code></li>
+<li><code>Risk Score</code></li>
+<li><code>Opportunity Score</code></li>
+<li><code>Asset Rank</code></li>
+</ul>
+<p>This gives a clear picture of performance, downside risk, and diversification value.</p>
+<h3>2. Actionable Recommendation</h3>
+<p>Each asset receives:</p>
+<ul>
+<li><code>buy</code></li>
+<li><code>hold</code></li>
+<li><code>reduce</code></li>
+</ul>
+<p>The recommendation is backed by:</p>
+<ul>
+<li><code>confidence</code></li>
+<li><code>risk_level</code></li>
+<li><code>rationale</code></li>
+<li><code>key_drivers</code></li>
+</ul>
+<p>This makes the output explainable and useful for portfolio review.</p>
+<h3>3. Heuristic Projection</h3>
+<p>Instead of pretending to predict an exact future price, we use a <strong>short-term heuristic projection</strong>.</p>
+<p>The projection is based on:</p>
+<ul>
+<li><code>30-day momentum</code></li>
+<li><code>90-day momentum</code></li>
+<li><code>volatility</code></li>
+</ul>
+<p>It returns:</p>
+<ul>
+<li><code>trend_outlook</code>: <code>bullish</code>, <code>neutral</code>, or <code>bearish</code></li>
+<li><code>projection_confidence</code></li>
+<li><code>projected_range</code>: <code>low</code>, <code>mid</code>, <code>high</code></li>
+<li><code>scenario_note</code></li>
+</ul>
+<p>This is intended as a <strong>scenario view</strong>, not a guaranteed forecast.</p>
+<h2>How The Projection Works</h2>
+<p>We combine recent signals with higher weight on short-term behavior:</p>
+<ul>
+<li><code>65%</code> from <code>30D momentum</code></li>
+<li><code>35%</code> from <code>90D momentum</code></li>
+</ul>
+<p>That combined signal is mapped into:</p>
+<ul>
+<li><code>bullish</code> if trend is meaningfully positive</li>
+<li><code>neutral</code> if the signal is inconclusive</li>
+<li><code>bearish</code> if trend is meaningfully negative</li>
+</ul>
+<p>Then we widen or tighten the projected range using volatility:</p>
+<ul>
+<li>lower volatility = tighter range, higher confidence</li>
+<li>higher volatility = wider range, lower confidence</li>
+</ul>
+<p>In simple terms:</p>
+<blockquote>
+<p>the system checks whether the asset has been strong or weak recently, then adjusts confidence based on how unstable that asset usually is.</p>
+</blockquote>
+<h2>Data</h2>
+<p>The project uses Yahoo Finance historical data for 11 assets:</p>
+<ul>
+<li><code>AAPL</code></li>
+<li><code>AMZN</code></li>
+<li><code>GOOGL</code></li>
+<li><code>MSFT</code></li>
+<li><code>UDMY</code></li>
+<li><code>NXE</code></li>
+<li><code>SPY</code></li>
+<li><code>CDR.WA</code></li>
+<li><code>EH</code></li>
+<li><code>BTC-USD</code></li>
+<li><code>ETH-USD</code></li>
+</ul>
+<p>Current local structure:</p>
+<ul>
+<li><code>data/raw/daily/</code>: roughly 5 years of daily data</li>
+<li><code>data/raw/hourly/</code>: recent hourly data for short-term momentum</li>
+</ul>
+<h2>Repository Structure</h2>
+<pre><code class="language-text">Financial-Agent/
+├── data/raw/daily/
+├── data/raw/hourly/
+├── notebooks/
+│   ├── eda_financial_agent.ipynb
+│   └── frontend_payload_viewer.ipynb
+├── outputs/
+│   └── frontend_payload.json
+├── scripts/
+│   └── download_data.py
+├── src/
+│   └── build_frontend_payload.py
+├── requirements.txt
+└── README.md
+</code></pre>
+<h2>Notebooks</h2>
+<h3><code>notebooks/eda_financial_agent.ipynb</code></h3>
+<p>Exploratory analysis notebook for:</p>
+<ul>
+<li>coverage and data quality</li>
+<li>normalized performance</li>
+<li>risk vs return</li>
+<li>drawdowns</li>
+<li>correlations</li>
+<li>recent momentum</li>
+</ul>
+<h3><code>notebooks/frontend_payload_viewer.ipynb</code></h3>
+<p>Visualization notebook for the generated backend payload.</p>
+<p>Useful to inspect:</p>
+<ul>
+<li>portfolio summary</li>
+<li>per-asset metrics</li>
+<li>recommendations</li>
+<li>projections</li>
+<li>correlation matrix</li>
+</ul>
+<h2>Backend Payload</h2>
+<p>The backend analytical layer generates:</p>
+<ul>
+<li><a href="/Users/pedrofs/EY_Challenge/Financial-Agent/outputs/frontend_payload.json">outputs/frontend_payload.json</a></li>
+</ul>
+<p>This file is meant to be consumed by:</p>
+<ul>
+<li>the frontend</li>
+<li>the API layer</li>
+<li>the chatbot context layer</li>
+</ul>
+<p>Top-level structure:</p>
+<pre><code class="language-json">{
+  &quot;generated_at&quot;: &quot;...&quot;,
+  &quot;portfolio_summary&quot;: {},
+  &quot;assets&quot;: [],
+  &quot;correlation_matrix&quot;: {}
+}
+</code></pre>
+<p>Each asset contains:</p>
+<pre><code class="language-json">{
+  &quot;ticker&quot;: &quot;AAPL&quot;,
+  &quot;intelligence&quot;: {},
+  &quot;recommendation&quot;: {},
+  &quot;projection&quot;: {}
+}
+</code></pre>
+<h2>How To Run</h2>
+<h3>1. Create a virtual environment</h3>
+<pre><code class="language-bash">python3 -m venv .venv
+source .venv/bin/activate
+</code></pre>
+<h3>2. Install dependencies</h3>
+<pre><code class="language-bash">pip install -r requirements.txt
+</code></pre>
+<h3>3. Download market data</h3>
+<pre><code class="language-bash">python scripts/download_data.py
+</code></pre>
+<h3>4. Build the frontend payload</h3>
+<pre><code class="language-bash">python src/build_frontend_payload.py
+</code></pre>
+<h3>5. Open the notebooks</h3>
+<pre><code class="language-bash">jupyter notebook
+</code></pre>
+<p>Then use the <code>Python (financial-agent)</code> kernel in VS Code or Jupyter.</p>
+<h2>Recommendation Logic</h2>
+<p>The recommendation layer is rule-based and explainable.</p>
+<p>In simple terms:</p>
+<ul>
+<li><code>buy</code>: strong opportunity with acceptable risk</li>
+<li><code>hold</code>: mixed or balanced signal</li>
+<li><code>reduce</code>: weak opportunity with elevated risk</li>
+</ul>
+<p>This was intentionally designed to be transparent and easy to defend in a business presentation.</p>
+<h2>Why This Approach</h2>
+<p>For a live investment-fund demo, the most important thing is not claiming magical price prediction.</p>
+<p>The value of the platform is:</p>
+<ul>
+<li>faster portfolio review</li>
+<li>clearer risk visibility</li>
+<li>explainable recommendations</li>
+<li>better prioritization of opportunities</li>
+<li>decision support that can be consumed by both people and AI assistants</li>
+</ul>
+<h2>Output Summary</h2>
+<p>This project already produces a backend-ready analytical layer with:</p>
+<ul>
+<li>asset-level metrics</li>
+<li>ranking</li>
+<li>recommendation logic</li>
+<li>scenario projection</li>
+<li>frontend-consumable JSON</li>
+</ul>
+<p>This makes it a strong base for:</p>
+<ul>
+<li>a dashboard</li>
+<li>a portfolio copilot</li>
+<li>a chatbot interface</li>
+<li>executive and technical demos</li>
+</ul>
+</body></html>
