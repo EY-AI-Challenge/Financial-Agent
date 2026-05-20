@@ -51,4 +51,7 @@ def download_financial_data(
         csv_files = [f for f in os.listdir(data_dir) if f.endswith('.csv')]
         for file in sorted(csv_files):
             file_path = os.path.join(data_dir, file)
+if __name__ == "__main__":
+    # Download dos dados individuais
+    download_financial_data()
 
